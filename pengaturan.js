@@ -5,7 +5,7 @@
 
 const CONFIG_APP = {
     // 1. Nama Studio Foto Anda (Akan tampil di header dan portal klien)
-    namaVendor: "Portal Client",
+    namaVendor: "HAURGEULIS FOTOYU",
 
     // 2. Google Drive API Key (Penting agar galeri bisa memuat foto)
     googleApiKey: "AIzaSyAZczbLeVTXl-QKqLDJFWQLCd-lW9jqqxo",
