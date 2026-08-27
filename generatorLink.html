@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Auto Link Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+    </style>
+    <!-- Memanggil file pengaturan untuk fallback nama vendor jika diperlukan -->
+    <script src="pengaturan.js"></script>
+</head>
+<body class="text-slate-800 flex items-center justify-center min-h-screen p-4 py-10">
+
+    <div class="bg-white max-w-xl w-full rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="bg-slate-900 px-6 py-5 flex items-center gap-4">
+            <div class="bg-white/20 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner">
+                <i class="fa-solid fa-link"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-lg">Secure Link Generator</h1>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-wider">With Quota Hashing & WA Direct</p>
+            </div>
+        </div>
+
+        <div class="p-6 md:p-8 space-y-5">
+            
+            <div class="hidden">
+                <input type="text" id="baseUrl">
+            </div>
+
+            <!-- Bagian Data Klien -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Kolom Nama -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Klien (Opsional)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-user-tag text-slate-400"></i>
+                            </div>
+                            <input type="text" id="clientName" placeholder="Cth: Deni Maria"
+                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:border-blue-600 outline-none transition text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Kolom WA Klien -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">No. WA Klien (Opsional)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-brands fa-whatsapp text-slate-400"></i>
+                            </div>
+                            <input type="number" id="clientPhone" placeholder="Cth: 08123456..."
+                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:border-blue-600 outline-none transition text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Link Google Drive Asli <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-brands fa-google-drive text-slate-400"></i>
+                        </div>
+                        <input type="text" id="driveLink" placeholder="Paste link folder di sini..."
+                            class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:border-blue-600 outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Batas Kuota Foto (Opsional)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-shield-halved text-slate-400"></i>
+                        </div>
+                        <input type="number" id="kuota" placeholder="Contoh: 100 (Kosongkan jika bebas)"
+                            class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:border-blue-600 outline-none transition text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAGIAN KUSTOMISASI PESAN WHATSAPP (NO-CODE) -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Format Pesan WhatsApp (Auto-Save)</label>
+                <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">
+                    Gunakan kode <span class="font-mono bg-blue-100 text-blue-700 px-1 rounded">[NAMA]</span> untuk menyisipkan nama, dan <span class="font-mono bg-blue-100 text-blue-700 px-1 rounded">[LINK]</span> untuk tautan galeri. Bebas diedit!
+                </p>
+                <textarea id="waTemplate" oninput="saveTemplate()" rows="4" 
+                    class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:border-blue-600 outline-none transition resize-none shadow-inner"></textarea>
+                <div class="flex justify-end mt-1">
+                    <button onclick="resetTemplate()" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 transition uppercase tracking-wider"><i class="fa-solid fa-rotate-left"></i> Reset ke Standar</button>
+                </div>
+            </div>
+
+            <button onclick="generateLink()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Buat Link Terenkripsi
+            </button>
+
+            <!-- KOTAK HASIL -->
+            <div id="resultBox" class="hidden mt-2 bg-green-50 border border-green-200 rounded-xl p-4 transition-all">
+                <span class="text-xs font-bold text-green-700 uppercase tracking-wider mb-2 block">Link Siap Dikirim!</span>
+                <textarea id="finalUrl" readonly class="w-full bg-white border border-green-200 rounded-lg p-3 text-sm text-slate-700 outline-none resize-none h-24 font-mono font-medium shadow-inner"></textarea>
+                
+                <!-- Dua Tombol Aksi -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    <button onclick="copyToClipboard()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition flex justify-center items-center gap-2 shadow-md">
+                        <i class="fa-solid fa-copy"></i> Salin Teks
+                    </button>
+                    <button id="btnSendWA" onclick="sendToClientWA()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition flex justify-center items-center gap-2 shadow-md">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> Kirim ke Klien
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Alert Notifikasi -->
+    <div id="customAlert" class="fixed top-4 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 transform -translate-y-32 opacity-0">
+        <i id="alertIcon" class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="alertText" class="text-sm font-bold">Teks tersalin!</span>
+    </div>
+
+    <script>
+        const DEFAULT_TEMPLATE = "Halo [NAMA],\n\nBerikut adalah link galeri foto eksklusif Anda untuk proses seleksi:\n[LINK]\n\nSilakan klik link di atas. Jika ada pertanyaan, balas pesan ini ya. Terima kasih!";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Setup Base URL
+            let currentUrl = window.location.href.split('?')[0].split('#')[0];
+            let portalUrl = currentUrl.includes("generatorLink.html") ? currentUrl.replace("generatorLink.html", "") : currentUrl.substring(0, currentUrl.lastIndexOf("/") + 1);
+            document.getElementById('baseUrl').value = portalUrl;
+
+            // Load Template Pesan dari Local Storage (Auto-Save fitur)
+            const savedTemplate = localStorage.getItem('customWaTemplate');
+            if (savedTemplate) {
+                document.getElementById('waTemplate').value = savedTemplate;
+            } else {
+                document.getElementById('waTemplate').value = DEFAULT_TEMPLATE;
+            }
+        });
+
+        // FUNGSI AUTO-SAVE TEMPLATE
+        function saveTemplate() {
+            const currentText = document.getElementById('waTemplate').value;
+            localStorage.setItem('customWaTemplate', currentText);
+        }
+
+        // FUNGSI RESET TEMPLATE KE BAWAAN
+        function resetTemplate() {
+            document.getElementById('waTemplate').value = DEFAULT_TEMPLATE;
+            localStorage.removeItem('customWaTemplate');
+            showAlert('Format pesan dikembalikan ke standar.');
+        }
+
+        function showAlert(message, isError = false) {
+            const alertBox = document.getElementById('customAlert');
+            const alertIcon = document.getElementById('alertIcon');
+            document.getElementById('alertText').textContent = message;
+            alertIcon.className = isError ? "fa-solid fa-triangle-exclamation text-red-400" : "fa-solid fa-circle-check text-green-400";
+            alertBox.classList.remove('-translate-y-32', 'opacity-0');
+            setTimeout(() => alertBox.classList.add('-translate-y-32', 'opacity-0'), 3000);
+        }
+
+        function extractFolderId(url) {
+            const match = url.match(/folders\/([a-zA-Z0-9-_]+)/);
+            if (match && match[1]) return match[1];
+            const matchId = url.match(/id=([a-zA-Z0-9-_]+)/);
+            return matchId && matchId[1] ? matchId[1] : null;
+        }
+
+        function generateLink() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientPhone = document.getElementById('clientPhone').value.trim();
+            const driveLink = document.getElementById('driveLink').value.trim();
+            const kuota = document.getElementById('kuota').value.trim();
+
+            if (!driveLink) return alert('Link Google Drive wajib diisi!');
+
+            const folderId = extractFolderId(driveLink);
+            if (!folderId) return showAlert('Link Google Drive tidak valid!', true);
+
+            let finalUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+            let params = [];
+            
+            if (clientName !== "") {
+                const cleanName = clientName.replace(/\s+/g, '-');
+                params.push(`n=${encodeURIComponent(cleanName)}`);
+            }
+
+            if (kuota && parseInt(kuota) > 0) {
+                const hashedKuota = btoa(kuota.toString()).replace(/=/g, '');
+                params.push(`k=${hashedKuota}`);
+            }
+            
+            params.push(`i=${folderId}`);
+            finalUrl += '?' + params.join('&');
+
+            document.getElementById('resultBox').classList.remove('hidden');
+            document.getElementById('finalUrl').value = finalUrl;
+
+            const btnSendWA = document.getElementById('btnSendWA');
+            if (clientPhone !== "") {
+                btnSendWA.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i> Kirim ke Klien';
+            } else {
+                btnSendWA.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i> Buka WhatsApp';
+            }
+        }
+
+        // HELPER: MENGUBAH TEMPLATE DARI KOLOM INPUT MENJADI PESAN ASLI
+        function getMessageTemplate(name, link) {
+            let template = document.getElementById('waTemplate').value;
+            let displayName = name ? `Kak ${name}` : "Kakak";
+            
+            // Replace tags
+            return template.replace(/\[NAMA\]/g, displayName).replace(/\[LINK\]/g, link);
+        }
+
+        function copyToClipboard() {
+            const finalUrl = document.getElementById('finalUrl').value;
+            const clientName = document.getElementById('clientName').value.trim();
+            
+            // Mengambil pesan yang sudah diolah dari UI
+            let messageToCopy = getMessageTemplate(clientName, finalUrl);
+            
+            navigator.clipboard.writeText(messageToCopy).then(() => {
+                showAlert('Teks pesan berhasil disalin!');
+            }).catch(() => {
+                const textArea = document.createElement("textarea");
+                textArea.value = messageToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showAlert('Teks pesan berhasil disalin!');
+            });
+        }
+
+        function sendToClientWA() {
+            const finalUrl = document.getElementById('finalUrl').value;
+            const clientName = document.getElementById('clientName').value.trim();
+            
+            let rawPhone = document.getElementById('clientPhone').value.replace(/[^0-9]/g, ''); 
+            
+            let finalPhone = rawPhone;
+            if (finalPhone.startsWith('0')) {
+                finalPhone = '62' + finalPhone.substring(1);
+            }
+
+            // Mengambil pesan yang sudah diolah dari UI
+            let message = getMessageTemplate(clientName, finalUrl);
+            let waUrl = '';
+            
+            if (finalPhone) {
+                waUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+            } else {
+                waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+            }
+            
+            window.open(waUrl, '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Client Portal</title>
+    
+    <script>
+        tailwind = {
+            config: {
+                darkMode: 'class', 
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    </script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .photo-card { transition: all 0.2s ease-in-out; }
+        .photo-card:active { transform: scale(0.97); }
+        .selected-overlay { opacity: 0; transition: opacity 0.2s ease; }
+        .photo-card.selected .selected-overlay { opacity: 1; }
+        
+        @keyframes checkPop {
+            0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .photo-card.selected .check-badge {
+            animation: checkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes breathing {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(0.92); }
+            100% { transform: scale(0.95); }
+        }
+        .photo-card.selected img {
+            border-radius: 0.5rem;
+            animation: breathing 3s infinite ease-in-out; 
+            box-shadow: 0 0 0 3px #3b82f6; 
+        }
+
+        /* Triangle untuk tooltip */
+        .tooltip-triangle {
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 10px;
+            height: 10px;
+            background-color: #2563eb; /* blue-600 */
+        }
+    </style>
+    
+    <script src="pengaturan.js"></script>
+</head>
+<body class="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 pb-32 flex flex-col min-h-screen">
+
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-900 dark:bg-slate-700 text-white w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg">
+                    <i class="fa-solid fa-camera-retro"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-800 dark:text-white" id="headerVendorName">Client Portal</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider" data-i18n="subtitle">Alat Seleksi Aman</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="showTutorial(true)" class="flex items-center justify-center w-9 h-9 md:w-auto md:px-3 md:py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm transition shadow-sm border border-slate-200 dark:border-slate-600" title="Panduan">
+                    <i class="fa-solid fa-circle-question text-blue-600 dark:text-blue-400"></i> <span class="hidden md:inline ml-1 font-bold" data-i18n="btnGuide">Panduan</span>
+                </button>
+                <button onclick="toggleDarkMode()" id="darkModeBtn" class="flex items-center justify-center w-9 h-9 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-sm transition shadow-sm border border-slate-200 dark:border-slate-600">
+                    <i class="fa-solid fa-moon text-slate-600 dark:text-slate-300"></i>
+                </button>
+                <button onclick="toggleLanguage()" class="flex items-center justify-center w-9 h-9 md:w-auto md:px-3 md:py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-sm transition shadow-sm border border-slate-200 dark:border-slate-600">
+                    <i class="fa-solid fa-globe text-blue-600 dark:text-blue-400"></i> <span id="langDisplay" class="hidden md:inline ml-1">EN</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="clientView" class="flex-grow w-full">
+        
+        <div id="greetingSection" class="hidden max-w-6xl w-full mx-auto px-4 pt-8">
+            <div class="bg-slate-900 dark:bg-slate-800 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-slate-800 dark:border-slate-700">
+                <div class="absolute -right-10 -top-10 text-slate-800 dark:text-slate-700 opacity-50 transform rotate-12 pointer-events-none">
+                    <i class="fa-solid fa-camera-retro text-[150px]"></i>
+                </div>
+                
+                <div class="relative z-10">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-1"><span data-i18n="welcomeTitle">Hallo</span>, <span id="displayClientName" class="text-blue-400 capitalize">Kakak</span> 👋</h2>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed" data-i18n="welcomeDesc">Selamat datang di portal seleksi foto dari {vendor}.</p>
+                </div>
+                
+                <div id="greetingQuotaInfo" class="hidden relative z-10 bg-slate-800/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-700 px-5 py-3 rounded-2xl items-center gap-4 shadow-inner">
+                    <div class="w-12 h-12 rounded-xl bg-blue-900/50 flex items-center justify-center text-blue-400 text-lg">
+                        <i class="fa-solid fa-images"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="quotaTitle">Kuota Paket</p>
+                        <p class="text-sm font-bold"><span id="greetingQuotaLimit" class="text-xl text-white">0</span> <span class="text-slate-300" data-i18n="quotaMax">Foto Maksimal</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-4 py-8 w-full">
+            <div id="inputSection" class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 mb-8 max-w-2xl mx-auto text-center relative overflow-hidden hidden transition-colors duration-300">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-200 via-slate-800 to-slate-200 dark:from-slate-700 dark:via-blue-500 dark:to-slate-700"></div>
+                <h2 class="text-xl font-bold mb-2 text-slate-800 dark:text-white" data-i18n="manualTitle">Akses Manual Galeri</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-8" data-i18n="manualDesc">Silakan tempel (paste) link folder Google Drive Anda di bawah ini.</p>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-brands fa-google-drive text-slate-400 text-lg"></i>
+                    </div>
+                    <input type="text" id="driveLink" 
+                        class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-slate-800 dark:focus:ring-blue-500 outline-none transition" 
+                        placeholder="Link Google Drive...">
+                </div>
+                <div class="mt-6 flex justify-center">
+                    <button onclick="loadFromDrive()" class="px-8 py-3.5 bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-medium rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-folder-open"></i> <span data-i18n="btnOpen">Buka Galeri</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="loadingState" class="hidden flex-col items-center justify-center py-16">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-slate-800 dark:text-blue-500 mb-4"></i>
+                <p id="loadingText" class="text-slate-500 dark:text-slate-400 font-medium mt-3" data-i18n="loading">Menarik data dari Google Drive...</p>
+            </div>
+
+            <div id="galleryContainer" class="hidden">
+                <div id="folderNavContainer" class="hidden mb-6 bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <h4 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center">
+                            <i class="fa-solid fa-folder-tree mr-2 text-blue-500"></i> 
+                            <span data-i18n="folderTitle">Sub-Folder Tersedia</span>
+                        </h4>
+                        <button id="btnBackFolder" onclick="navigateBackFolder()" class="hidden text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-600 transition flex items-center">
+                            <i class="fa-solid fa-arrow-left mr-1.5"></i> <span data-i18n="btnBackFolder">Kembali</span>
+                        </button>
+                    </div>
+                    <div id="folderGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-800 dark:text-white flex items-center gap-2">
+                            <span id="currentFolderDisplay" data-i18n="galleryTitle">Koleksi Foto</span>
+                        </h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" data-i18n="galleryDesc">Klik gambar untuk memilih. Klik ikon 🔍 untuk perbesar & tambah catatan.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        
+                        <!-- TOMBOL GRID DENGAN ANIMASI BALON TOOLTIP -->
+                        <div class="relative">
+                            <button onclick="hideTooltip('gridTooltip'); toggleGridSize()" class="text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2 px-3 rounded-lg font-medium cursor-pointer shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition" title="Ubah Ukuran Grid">
+                                <i class="fa-solid fa-table-cells-large"></i>
+                            </button>
+                            <div id="gridTooltip" class="hidden opacity-0 absolute -top-12 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg animate-bounce shadow-lg pointer-events-none whitespace-nowrap z-50 transition-all duration-300">
+                                <span data-i18n="gridTip">Ubah Baris Foto</span>
+                                <div class="tooltip-triangle"></div>
+                            </div>
+                        </div>
+
+                        <!-- DROPDOWN URUTAN -->
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-arrow-down-a-z text-slate-400 text-sm"></i>
+                            </div>
+                            <select id="sortDropdown" onchange="applySort(this.value)" class="text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2 pl-9 pr-8 rounded-lg font-medium cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-800 appearance-none transition">
+                                <option value="default" data-i18n="sortDefault">Urutan Asli</option>
+                                <option value="asc">A - Z</option>
+                                <option value="desc">Z - A</option>
+                                <option value="random" data-i18n="sortRandom">Acak (Random)</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- TOMBOL ACAK LAGI DENGAN ANIMASI BALON TOOLTIP -->
+                        <div class="relative">
+                            <button id="btnReshuffle" onclick="hideTooltip('reshuffleTooltip'); applySort('random')" class="hidden text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 px-3 rounded-lg font-bold transition shadow-sm hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600">
+                                <i class="fa-solid fa-dice"></i> <span class="hidden sm:inline ml-1" data-i18n="btnReshuffle">Acak Lagi</span>
+                            </button>
+                            <div id="reshuffleTooltip" class="hidden opacity-0 absolute -top-12 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg animate-bounce shadow-lg pointer-events-none whitespace-nowrap z-50 transition-all duration-300">
+                                <span data-i18n="reshuffleTip">Tekan ini untuk acak foto</span>
+                                <div class="tooltip-triangle"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="toggleViewMode()" id="viewModeBtn" class="text-sm bg-slate-800 dark:bg-slate-700 text-white py-2 px-4 rounded-lg font-medium transition flex items-center gap-2 shadow-sm hover:bg-slate-700 dark:hover:bg-slate-600 border border-transparent dark:border-slate-600">
+                            <i class="fa-solid fa-filter"></i> <span id="btnViewText">Lihat Pilihan</span> (0)
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="photoGrid" class="mb-8 transition-all duration-300"></div>
+                <div id="paginationContainer" class="flex justify-center items-center gap-3 mt-10 pb-8 hidden"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer id="clientFooter" class="text-center py-6 mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
+        <p class="text-sm text-slate-400">&copy; <script>document.write(new Date().getFullYear())</script> Layanan eksklusif oleh <span id="footerVendorName" class="font-medium text-slate-500 dark:text-slate-300">Portal</span>.</p>
+    </footer>
+
+    <div id="actionBar" class="fixed bottom-0 left-0 w-full bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.5)] transform translate-y-full transition-transform duration-300 z-50">
+        <div id="quotaContainer" class="hidden w-full px-4 md:px-8 pt-3 pb-1 max-w-6xl mx-auto border-b border-slate-100 dark:border-slate-700">
+            <div class="flex justify-between items-end mb-1.5">
+                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="quotaFooter">Kuota Paket Anda</span>
+                <span id="quotaText" class="text-sm font-bold text-slate-800 dark:text-white">0 / 0</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden shadow-inner">
+                <div id="quotaBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-slate-900 dark:bg-blue-600 text-white font-bold w-12 h-12 rounded-full flex items-center justify-center text-lg shadow-md shrink-0" id="selectedCount">0</div>
+                <div class="hidden sm:block">
+                    <p class="font-bold text-slate-800 dark:text-white" data-i18n="selFooterTitle">Foto Terpilih</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="selFooterDesc">Kirim daftar ini ke tim kami</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="downloadList()" class="px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded-xl transition flex items-center gap-2 border border-slate-300 dark:border-slate-600 shadow-sm" title="Download file .txt">
+                    <i class="fa-solid fa-file-arrow-down text-lg"></i> <span class="hidden md:inline" data-i18n="btnDownload">Download List</span>
+                </button>
+                <button onclick="copyToClipboard()" class="px-5 md:px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition flex items-center gap-2 shadow-lg">
+                    <i class="fa-brands fa-whatsapp text-xl"></i> <span class="hidden md:inline" data-i18n="btnWA">Kirim WA</span><span class="md:hidden" data-i18n="btnWA">Kirim WA</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customAlert" class="fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-slate-800 border border-transparent dark:border-slate-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[99] flex items-center gap-3 transition-all duration-300 transform -translate-y-32 opacity-0 min-w-[300px] justify-center">
+        <i id="alertIcon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <span id="alertText" class="text-sm font-bold tracking-wide">Notifikasi</span>
+    </div>
+
+    <div id="tutorialModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] hidden flex-col justify-center items-center opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-3xl max-w-md w-full p-8 shadow-2xl transform scale-95 transition-transform duration-300" id="tutorialContent">
+            <div class="absolute top-4 right-4">
+                <button onclick="closeTutorial()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="text-center mb-6 mt-2">
+                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 dark:text-white" data-i18n="tutTitle">Cara Memilih Foto</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-2" data-i18n="tutDesc">Ikuti panduan mudah ini untuk menyeleksi foto favorit Anda:</p>
+            </div>
+            <ul class="space-y-4 mb-8">
+                <li class="flex items-start gap-4">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0 shadow-md">1</div>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 pt-1" data-i18n="tut1"><strong>Pilih Foto:</strong> Klik (tap) langsung pada gambar foto untuk memilihnya.</p>
+                </li>
+                <li class="flex items-start gap-4">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0 shadow-md">2</div>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 pt-1" data-i18n="tut2"><strong>Zoom & Catatan:</strong> Klik ikon <i class="fa-solid fa-magnifying-glass-plus text-slate-800 dark:text-white mx-1"></i> untuk memperbesar gambar & tambah instruksi edit.</p>
+                </li>
+                <li class="flex items-start gap-4">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0 shadow-md">3</div>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 pt-1" data-i18n="tut4"><strong>Tampilan & Urutan:</strong> Klik ikon <i class="fa-solid fa-table-cells-large text-slate-800 dark:text-white mx-1"></i> untuk mengubah jumlah baris grid foto. Gunakan dropdown untuk melihat foto dalam <em>'Urutan Asli'</em> (berdasarkan jam foto) atau <em>'Acak'</em>. Klik tombol <em>'Lihat Pilihan'</em> untuk meninjau foto yang sudah dipilih.</p>
+                </li>
+                <li class="flex items-start gap-4">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0 shadow-md">4</div>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 pt-1" data-i18n="tut3"><strong>Kirim List:</strong> Jika sudah selesai, klik tombol Kirim WA atau Download di bagian bawah layar.</p>
+                </li>
+            </ul>
+            <button onclick="closeTutorial()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-lg text-sm uppercase tracking-wider" data-i18n="btnTut">
+                Mengerti, Mulai Memilih!
+            </button>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX ZOOM -->
+    <div id="lightbox" class="fixed inset-0 bg-black/95 z-[60] hidden flex-col justify-center items-center opacity-0 transition-opacity duration-300 backdrop-blur-sm touch-pan-y">
+        <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent">
+            <p id="lightboxTitle" class="text-white font-medium drop-shadow-md text-sm md:text-base ml-2">Photo Name</p>
+            <button onclick="closeLightbox()" class="text-white hover:text-red-400 w-10 h-10 flex items-center justify-center text-2xl bg-black/50 hover:bg-white/20 rounded-full transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <button onclick="prevPhoto(event)" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/50 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl md:text-2xl z-50 transition hidden md:flex"><i class="fa-solid fa-chevron-left"></i></button>
+        <button onclick="nextPhoto(event)" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/50 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl md:text-2xl z-50 transition hidden md:flex"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="w-full h-full flex items-center justify-center p-2 pb-32 md:pb-24 pointer-events-none">
+            <img id="lightboxImg" src="" class="max-w-full max-h-full object-contain rounded-md shadow-2xl transition-all duration-200 ease-in-out pointer-events-auto select-none opacity-100 transform scale-100">
+        </div>
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-11/12 max-w-md z-50">
+            <p class="text-white/50 text-xs md:hidden text-center mb-[-5px] animate-pulse"><i class="fa-solid fa-arrows-left-right"></i> <span data-i18n="swipe">Geser kiri/kanan</span></p>
+            <button id="lightboxSelectBtn" onclick="toggleLightboxSelect()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition flex items-center justify-center shadow-lg border border-slate-600 w-full sm:w-auto">
+                <i class="fa-regular fa-square-check mr-2"></i> <span id="btnSelectText">Pilih Foto Ini</span>
+            </button>
+            <textarea id="lightboxNote" oninput="saveNote()" data-i18n="notePlaceholder" class="w-full bg-slate-800/90 text-white placeholder-slate-400 text-sm rounded-xl p-3 border border-slate-600 focus:outline-none focus:border-slate-400 hidden transition-all shadow-lg backdrop-blur-sm" rows="2" placeholder="Catatan edit (opsional), misal: hapus jerawat..."></textarea>
+        </div>
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT -->
+    <script>
+        const ITEMS_PER_PAGE = 200; 
+        
+        let appState = { 
+            rootFolderId: null, folderId: null, clientName: '', 
+            photos: [], originalPhotos: [], folders: [], folderHistory: [],
+            selectedMap: new Map(), 
+            notes: {}, currentPage: 1, kuota: null, 
+            viewMode: 'all', sortOrder: 'default', lang: 'id',
+            gridMode: 2 
+        };
+
+        const TRANSLATIONS = {
+            id: {
+                subtitle: "Alat Seleksi Aman",
+                welcomeTitle: "Hallo",
+                welcomeDesc: "Selamat datang di portal seleksi foto dari <span class='font-bold text-white'>{vendor}</span>.",
+                quotaTitle: "Kuota Paket",
+                quotaMax: "Foto Maksimal",
+                manualTitle: "Akses Manual Galeri",
+                manualDesc: "Silakan tempel (paste) link folder Google Drive Anda di bawah ini.",
+                btnOpen: "Buka Galeri",
+                loading: "Menarik data dari Google Drive...",
+                folderTitle: "Sub-Folder Tersedia",
+                btnBackFolder: "Kembali",
+                galleryTitle: "Koleksi Foto",
+                galleryDesc: "Klik gambar untuk memilih. Klik ikon 🔍 untuk perbesar & tambah catatan.",
+                sortDefault: "Urutan Asli",
+                sortRandom: "Acak (Random)",
+                btnReshuffle: "Acak Lagi",
+                btnViewSel: "Lihat Pilihan",
+                btnViewAll: "Lihat Semua Folder",
+                quotaFooter: "Kuota Paket Anda",
+                selFooterTitle: "Foto Terpilih",
+                selFooterDesc: "Kirim daftar ini ke tim kami",
+                btnDownload: "Download List",
+                btnWA: "Kirim WA",
+                tutTitle: "Cara Memilih Foto",
+                tutDesc: "Ikuti panduan mudah ini untuk menyeleksi foto favorit Anda:",
+                tut1: "<strong>Pilih Foto:</strong> Klik (tap) langsung pada gambar foto untuk memilihnya.",
+                tut2: "<strong>Zoom & Catatan:</strong> Klik ikon <i class='fa-solid fa-magnifying-glass-plus text-slate-800 dark:text-white mx-1'></i> untuk memperbesar gambar & tambah instruksi edit.",
+                tut4: "<strong>Tampilan & Urutan:</strong> Klik ikon <i class='fa-solid fa-table-cells-large text-slate-800 dark:text-white mx-1'></i> untuk mengubah jumlah baris grid foto. Gunakan dropdown untuk melihat foto dalam <em>'Urutan Asli'</em> (berdasarkan jam foto) atau <em>'Acak'</em>. Klik tombol <em>'Lihat Pilihan'</em> untuk meninjau foto yang sudah dipilih.",
+                tut3: "<strong>Kirim List:</strong> Jika sudah selesai, klik tombol Kirim WA atau Download di bagian bawah layar.",
+                btnTut: "Mengerti, Mulai Memilih!",
+                btnGuide: "Panduan",
+                swipe: "Geser kiri/kanan",
+                btnSelect: "Pilih Foto Ini",
+                btnSelected: "Terpilih",
+                notePlaceholder: "Catatan edit (opsional), misal: hapus jerawat...",
+                alertLimit: "Batas maksimal limit foto telah tercapai!",
+                alertEmpty: "Belum ada foto yang dipilih.",
+                alertCopy: "List foto disalin! Silahkan paste di WhatsApp.",
+                gridTip: "Ubah Baris Foto",
+                reshuffleTip: "Tekan ini untuk acak foto"
+            },
+            en: {
+                subtitle: "Secure Selection Tool",
+                welcomeTitle: "Hello",
+                welcomeDesc: "Welcome to the photo selection portal from <span class='font-bold text-white'>{vendor}</span>.",
+                quotaTitle: "Package Quota",
+                quotaMax: "Max Photos",
+                manualTitle: "Manual Gallery Access",
+                manualDesc: "Please paste your Google Drive folder link below.",
+                btnOpen: "Open Gallery",
+                loading: "Fetching data from Google Drive...",
+                folderTitle: "Available Sub-Folders",
+                btnBackFolder: "Go Back",
+                galleryTitle: "Photo Collection",
+                galleryDesc: "Click an image to select. Click 🔍 to zoom & add notes.",
+                sortDefault: "Original Order",
+                sortRandom: "Randomize",
+                btnReshuffle: "Shuffle Again",
+                btnViewSel: "View Selection",
+                btnViewAll: "View All Folders",
+                quotaFooter: "Your Package Quota",
+                selFooterTitle: "Selected Photos",
+                selFooterDesc: "Send this list to our team",
+                btnDownload: "Download List",
+                btnWA: "Send via WA",
+                tutTitle: "How to Select Photos",
+                tutDesc: "Follow these simple steps to select your favorite photos:",
+                tut1: "<strong>Select Photo:</strong> Click (tap) directly on the image to select it.",
+                tut2: "<strong>Zoom & Notes:</strong> Click the <i class='fa-solid fa-magnifying-glass-plus text-slate-800 dark:text-white mx-1'></i> icon to enlarge & add editing instructions.",
+                tut4: "<strong>View & Sort:</strong> Click the <i class='fa-solid fa-table-cells-large text-slate-800 dark:text-white mx-1'></i> icon to change grid layout. Use the dropdown to view photos in <em>'Original Order'</em> or <em>'Random'</em>. Click <em>'View Selection'</em> to review your chosen photos.",
+                tut3: "<strong>Send List:</strong> When finished, click the Send via WA or Download button at the bottom.",
+                btnTut: "Got it, Start Selecting!",
+                btnGuide: "Guide",
+                swipe: "Swipe left/right",
+                btnSelect: "Select This Photo",
+                btnSelected: "Selected",
+                notePlaceholder: "Edit notes (optional), e.g., remove blemishes...",
+                alertLimit: "Maximum photo limit has been reached!",
+                alertEmpty: "No photos selected yet.",
+                alertCopy: "List copied! Please paste it in WhatsApp.",
+                gridTip: "Change Grid Rows",
+                reshuffleTip: "Click to reshuffle"
+            }
+        };
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateDarkModeIcon(isDark);
+        }
+
+        function updateDarkModeIcon(isDark) {
+            const btn = document.getElementById('darkModeBtn');
+            if (!btn) return;
+            if (isDark) {
+                btn.innerHTML = '<i class="fa-solid fa-sun text-yellow-400"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-moon text-slate-600 dark:text-slate-300"></i>';
+            }
+        }
+
+        function toggleLanguage() {
+            appState.lang = appState.lang === 'id' ? 'en' : 'id';
+            document.getElementById('langDisplay').textContent = appState.lang === 'id' ? 'EN' : 'ID';
+            applyTranslations();
+        }
+
+        function applyTranslations() {
+            const langData = TRANSLATIONS[appState.lang];
+            const vendorName = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.namaVendor) ? CONFIG_APP.namaVendor : 'Studio Foto';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (langData[key]) {
+                    let textToDisplay = langData[key].replace('{vendor}', vendorName);
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = textToDisplay;
+                    } else {
+                        el.innerHTML = textToDisplay;
+                    }
+                }
+            });
+            updateViewModeText();
+            if (currentZoomPhoto) updateLightboxSelectBtn();
+        }
+
+        let currentZoomIndex = 0; 
+        let currentZoomPhoto = null;
+        let touchstartX = 0;
+        let touchendX = 0;
+        let hasSeenTutorial = false; 
+        let tooltipTimeout;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            updateDarkModeIcon(document.documentElement.classList.contains('dark'));
+
+            if (typeof CONFIG_APP !== 'undefined') {
+                document.getElementById('footerVendorName').textContent = CONFIG_APP.namaVendor || 'Studio Foto';
+                document.getElementById('pageTitle').textContent = `Client Portal - ${CONFIG_APP.namaVendor}`;
+                document.getElementById('headerVendorName').textContent = CONFIG_APP.namaVendor || 'Studio Foto';
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlName = urlParams.get('n');
+            const urlKuota = urlParams.get('k');
+            const autoId = urlParams.get('i');
+
+            if (urlName) {
+                appState.clientName = decodeURIComponent(urlName).replace(/-/g, ' ');
+                document.getElementById('displayClientName').textContent = appState.clientName;
+                document.getElementById('greetingSection').classList.remove('hidden');
+            } else {
+                document.getElementById('displayClientName').textContent = "Kakak";
+            }
+            
+            if (urlKuota) {
+                try {
+                    let paddedKuota = urlKuota;
+                    const pad = urlKuota.length % 4;
+                    if (pad > 0) paddedKuota += '='.repeat(4 - pad);
+                    
+                    const decodedKuota = parseInt(atob(paddedKuota));
+                    if (!isNaN(decodedKuota) && decodedKuota > 0) {
+                        appState.kuota = decodedKuota;
+                        document.getElementById('quotaContainer').classList.remove('hidden');
+                        document.getElementById('quotaContainer').classList.add('block');
+                        document.getElementById('greetingQuotaInfo').classList.remove('hidden');
+                        document.getElementById('greetingQuotaInfo').classList.add('flex');
+                        document.getElementById('greetingQuotaLimit').textContent = appState.kuota;
+                    }
+                } catch (e) { console.error("Hash kuota tidak valid."); }
+            }
+
+            if (autoId) {
+                document.getElementById('driveLink').value = `https://drive.google.com/drive/folders/${autoId}`;
+                document.getElementById('inputSection').classList.add('hidden');
+                setTimeout(() => { loadFromDrive(); }, 500);
+            } else {
+                document.getElementById('inputSection').classList.remove('hidden');
+            }
+
+            const lightboxEl = document.getElementById('lightbox');
+            lightboxEl.addEventListener('touchstart', e => {
+                if (e.target.tagName.toLowerCase() === 'textarea') return;
+                touchstartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            lightboxEl.addEventListener('touchend', e => {
+                if (e.target.tagName.toLowerCase() === 'textarea') return;
+                touchendX = e.changedTouches[0].screenX;
+                handleSwipeGesture();
+            }, { passive: true });
+            
+            applyTranslations(); 
+        });
+
+        // FUNGSI ANIMASI BALON TOOLTIP
+        function hideTooltip(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => el.classList.add('hidden'), 300);
+            }
+        }
+
+        function triggerTooltipsAnimation() {
+            clearTimeout(tooltipTimeout);
+            const gt = document.getElementById('gridTooltip');
+            const rt = document.getElementById('reshuffleTooltip');
+            
+            if(gt) { gt.classList.remove('hidden'); setTimeout(()=> gt.classList.replace('opacity-0', 'opacity-100'), 50); }
+            if(rt && document.getElementById('sortDropdown').value === 'random') { rt.classList.remove('hidden'); setTimeout(()=> rt.classList.replace('opacity-0', 'opacity-100'), 50); }
+            
+            // Auto hide tooltip dalam 8 detik agar tidak mengganggu
+            tooltipTimeout = setTimeout(() => {
+                hideTooltip('gridTooltip');
+                hideTooltip('reshuffleTooltip');
+            }, 8000);
+        }
+
+        function toggleGridSize() {
+            if (appState.gridMode === 2) {
+                appState.gridMode = 4;
+            } else if (appState.gridMode === 4) {
+                appState.gridMode = 6;
+            } else {
+                appState.gridMode = 2;
+            }
+            renderGallery();
+            
+            const lang = appState.lang === 'id' ? 'Tampilan: ' + appState.gridMode + ' Foto per baris' : 'View: ' + appState.gridMode + ' Photos per row';
+            showAlert(lang, 'success');
+        }
+
+        function showTutorial(forceManual = false) {
+            if (hasSeenTutorial && !forceManual) return;
+            const modal = document.getElementById('tutorialModal');
+            const content = document.getElementById('tutorialContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.replace('opacity-0', 'opacity-100');
+                content.classList.replace('scale-95', 'scale-100');
+            }, 10);
+            hasSeenTutorial = true;
+        }
+
+        function closeTutorial() {
+            const modal = document.getElementById('tutorialModal');
+            const content = document.getElementById('tutorialContent');
+            modal.classList.replace('opacity-100', 'opacity-0');
+            content.classList.replace('scale-100', 'scale-95');
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                
+                // Panggil Animasi Balon setelah Panduan ditutup
+                triggerTooltipsAnimation();
+            }, 300);
+        }
+
+        function handleSwipeGesture() {
+            const minSwipeDistance = 50; 
+            if (touchendX < touchstartX - minSwipeDistance) {
+                if (currentZoomIndex < (appState.viewMode === 'selected' ? appState.selectedMap.size : appState.photos.length) - 1) nextPhoto();
+            }
+            if (touchendX > touchstartX + minSwipeDistance) {
+                if (currentZoomIndex > 0) prevPhoto();
+            }
+        }
+
+        function saveProgress() {
+            if (!appState.rootFolderId) return;
+            const dataToSave = { 
+                selected: Array.from(appState.selectedMap.entries()), 
+                notes: appState.notes 
+            };
+            localStorage.setItem(`client_portal_save_${appState.rootFolderId}`, JSON.stringify(dataToSave));
+        }
+
+        function loadProgress(rootFolderId) {
+            const savedData = localStorage.getItem(`client_portal_save_${rootFolderId}`);
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    appState.selectedMap = new Map(data.selected || []);
+                    appState.notes = data.notes || {};
+                    if (appState.selectedMap.size > 0) {
+                        setTimeout(() => { updateActionBar(); }, 1000);
+                    }
+                } catch (e) { console.error("Gagal memuat data", e); }
+            } else {
+                appState.selectedMap = new Map();
+                appState.notes = {};
+            }
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('customAlert');
+            const alertText = document.getElementById('alertText');
+            const alertIcon = document.getElementById('alertIcon');
+            alertText.textContent = message;
+            alertIcon.className = type === 'success' ? "fa-solid fa-circle-check text-green-400 text-lg" : "fa-solid fa-triangle-exclamation text-red-400 text-lg";
+            alertBox.classList.remove('-translate-y-32', 'opacity-0');
+            setTimeout(() => alertBox.classList.add('-translate-y-32', 'opacity-0'), 3000);
+        }
+
+        function extractFolderId(url) {
+            const match = url.match(/folders\/([a-zA-Z0-9-_]+)/);
+            if (match && match[1]) return match[1];
+            return url.match(/id=([a-zA-Z0-9-_]+)/)?.[1] || null;
+        }
+
+        async function loadFromDrive(overrideFolderId = null, folderName = null, isNavigatingBack = false) {
+            if (typeof CONFIG_APP === 'undefined' || !CONFIG_APP.googleApiKey) return showAlert('Sistem belum dikonfigurasi.', 'error');
+            
+            let targetFolderId = overrideFolderId;
+            
+            if (!targetFolderId) {
+                const link = document.getElementById('driveLink').value.trim();
+                targetFolderId = extractFolderId(link) || link;
+                if (!targetFolderId) return showAlert('Link Google Drive tidak valid.', 'error');
+                
+                appState.rootFolderId = targetFolderId;
+                appState.folderHistory = [];
+                loadProgress(appState.rootFolderId); 
+                document.getElementById('inputSection').classList.add('hidden');
+            } else {
+                if (!isNavigatingBack) {
+                    const currentName = appState.folderHistory.length === 0 ? "Galeri Utama" : document.getElementById('currentFolderDisplay').innerText;
+                    appState.folderHistory.push({ id: appState.folderId, name: currentName });
+                }
+            }
+
+            appState.folderId = targetFolderId;
+            appState.currentPage = 1; 
+            appState.viewMode = 'all';
+            
+            const displayTitle = (targetFolderId === appState.rootFolderId) ? TRANSLATIONS[appState.lang].galleryTitle : folderName;
+            document.getElementById('currentFolderDisplay').innerHTML = (targetFolderId === appState.rootFolderId) 
+                ? displayTitle 
+                : `<i class="fa-solid fa-folder-open text-blue-500 mr-2"></i> ${displayTitle}`;
+
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('loadingState').classList.add('flex');
+            document.getElementById('galleryContainer').classList.add('hidden');
+            
+            try {
+                let fetchedFiles = []; let nextPageToken = "";
+                const query = encodeURIComponent(`'${targetFolderId}' in parents and trashed=false`);
+                do {
+                    let apiUrl = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=nextPageToken,files(id,name,mimeType,thumbnailLink)&key=${CONFIG_APP.googleApiKey}&pageSize=1000`;
+                    if (nextPageToken) apiUrl += `&pageToken=${nextPageToken}`;
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    if (data.files) fetchedFiles = fetchedFiles.concat(data.files);
+                    nextPageToken = data.nextPageToken;
+                } while (nextPageToken);
+
+                if (fetchedFiles.length > 0 || appState.folderHistory.length > 0) {
+                    appState.folders = fetchedFiles.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+                    let photoFiles = fetchedFiles.filter(f => f.mimeType !== 'application/vnd.google-apps.folder' && f.thumbnailLink);
+                    
+                    appState.photos = photoFiles.map(f => ({ 
+                        id: f.id, name: f.name, folderName: displayTitle,
+                        url: f.thumbnailLink?.replace('=s220', '=s500'), 
+                        fullUrl: f.thumbnailLink?.replace('=s220', '=s1600') 
+                    }));
+                    appState.originalPhotos = [...appState.photos];
+                    
+                    renderFolders(); 
+                    
+                    // DEFAULT ACAK SAAT LOADING
+                    document.getElementById('sortDropdown').value = 'random';
+                    applySort('random');
+                    
+                    if (!overrideFolderId) { 
+                        setTimeout(() => { showTutorial(false); }, 800); 
+                    } else {
+                        // Jika pindah folder dan sudah pernah lihat tutorial, langsung trigger balon
+                        if(hasSeenTutorial) setTimeout(triggerTooltipsAnimation, 500);
+                    }
+                } else {
+                    showAlert('Folder kosong atau hak akses bukan Publik.', 'error');
+                    document.getElementById('loadingState').classList.add('hidden');
+                }
+            } catch (error) {
+                showAlert('Gagal terhubung ke Google Drive.', 'error');
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        function renderFolders() {
+            const container = document.getElementById('folderNavContainer');
+            const grid = document.getElementById('folderGrid');
+            const btnBack = document.getElementById('btnBackFolder');
+            grid.innerHTML = '';
+
+            if (appState.folderHistory.length > 0) {
+                btnBack.classList.remove('hidden');
+            } else {
+                btnBack.classList.add('hidden');
+            }
+
+            if (appState.folders.length === 0 && appState.folderHistory.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+
+            appState.folders.forEach(folder => {
+                const btn = document.createElement('button');
+                btn.className = "flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition text-left group";
+                btn.innerHTML = `<i class="fa-solid fa-folder text-yellow-400 group-hover:text-blue-500 transition text-2xl"></i> <span class="font-bold text-xs md:text-sm text-slate-700 dark:text-slate-200 w-full line-clamp-2">${folder.name}</span>`;
+                btn.onclick = () => { loadFromDrive(folder.id, folder.name, false); };
+                grid.appendChild(btn);
+            });
+            
+            if(appState.folders.length === 0 && appState.folderHistory.length > 0) {
+                 grid.innerHTML = `<p class="text-xs text-slate-500 dark:text-slate-400 col-span-full">Tidak ada sub-folder lagi di dalam sini.</p>`;
+            }
+        }
+
+        function navigateBackFolder() {
+            if (appState.folderHistory.length === 0) return;
+            const prevFolder = appState.folderHistory.pop();
+            loadFromDrive(prevFolder.id, prevFolder.name, true);
+        }
+
+        function applySort(order) {
+            appState.sortOrder = order;
+            const btnReshuffle = document.getElementById('btnReshuffle');
+            const rtTooltip = document.getElementById('reshuffleTooltip');
+            
+            if (order === 'random') {
+                btnReshuffle.classList.remove('hidden');
+                document.getElementById('sortDropdown').value = 'random'; 
+            } else {
+                btnReshuffle.classList.add('hidden');
+                if(rtTooltip) hideTooltip('reshuffleTooltip'); // Sembunyikan balon jika bukan acak
+            }
+
+            if (order === 'default') {
+                appState.photos = [...appState.originalPhotos];
+            } else if (order === 'asc') {
+                appState.photos.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            } else if (order === 'desc') {
+                appState.photos.sort((a, b) => b.name.localeCompare(a.name, undefined, {numeric: true, sensitivity: 'base'}));
+            } else if (order === 'random') {
+                let array = [...appState.photos];
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                appState.photos = array;
+            }
+            appState.currentPage = 1;
+            renderGallery();
+            
+            if(order === 'random') {
+                const icon = btnReshuffle.querySelector('i');
+                icon.classList.add('fa-spin');
+                setTimeout(() => icon.classList.remove('fa-spin'), 500);
+            }
+        }
+
+        function updateViewModeText() {
+            const btn = document.getElementById('viewModeBtn');
+            const langData = TRANSLATIONS[appState.lang];
+            if (appState.viewMode === 'all') {
+                btn.innerHTML = `<i class="fa-solid fa-filter"></i> <span id="btnViewText">${langData.btnViewSel}</span> (${appState.selectedMap.size})`;
+                btn.className = "text-sm bg-slate-800 dark:bg-slate-700 text-white py-2 px-4 rounded-lg font-medium transition flex items-center gap-2 shadow-sm hover:bg-slate-700 dark:hover:bg-slate-600 border border-transparent dark:border-slate-600";
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-border-all"></i> <span id="btnViewText">${langData.btnViewAll}</span>`;
+                btn.className = "text-sm bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition flex items-center gap-2 shadow-sm hover:bg-blue-700 border border-transparent";
+            }
+        }
+
+        function toggleViewMode() {
+            if (appState.viewMode === 'all') {
+                if (appState.selectedMap.size === 0) return showAlert(TRANSLATIONS[appState.lang].alertEmpty, 'error');
+                appState.viewMode = 'selected';
+                document.getElementById('folderNavContainer').classList.add('hidden'); 
+            } else {
+                appState.viewMode = 'all';
+                if (appState.folders.length > 0 || appState.folderHistory.length > 0) {
+                    document.getElementById('folderNavContainer').classList.remove('hidden');
+                }
+            }
+            updateViewModeText();
+            appState.currentPage = 1;
+            renderGallery();
+        }
+
+        function renderGallery() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('flex');
+            document.getElementById('galleryContainer').classList.remove('hidden');
+            
+            const grid = document.getElementById('photoGrid'); 
+            grid.innerHTML = '';
+            
+            let gridClasses = '';
+            let gapClass = '';
+            let isSmallGrid = appState.gridMode > 2;
+
+            if (appState.gridMode === 2) {
+                gridClasses = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+                gapClass = 'gap-4 md:gap-6';
+            } else if (appState.gridMode === 4) {
+                gridClasses = 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6';
+                gapClass = 'gap-2 md:gap-4';
+            } else if (appState.gridMode === 6) {
+                gridClasses = 'grid-cols-6 md:grid-cols-8 lg:grid-cols-10';
+                gapClass = 'gap-1.5 md:gap-3';
+            }
+            
+            grid.className = `grid ${gridClasses} ${gapClass} mb-8 transition-all duration-300`;
+
+            const photosToProcess = appState.viewMode === 'selected' 
+                ? Array.from(appState.selectedMap.values()) 
+                : appState.photos;
+
+            const startIndex = (appState.currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const photosToShow = photosToProcess.slice(startIndex, endIndex);
+
+            photosToShow.forEach((photo, index) => {
+                const globalIndex = appState.photos.findIndex(p => p.id === photo.id); 
+                const card = document.createElement('div');
+                card.className = `photo-card relative bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden aspect-square shadow-sm hover:shadow-md ${appState.selectedMap.has(photo.id) ? 'selected' : ''}`;
+                
+                const img = document.createElement('img');
+                img.src = photo.url; 
+                img.className = "w-full h-full object-cover cursor-pointer transition-transform duration-300"; 
+                img.loading = "lazy";
+                img.onclick = () => toggleSelect(photo, card);
+                
+                const overlay = document.createElement('div');
+                overlay.className = "selected-overlay absolute inset-0 bg-slate-900/10 dark:bg-black/20 z-10 flex items-start justify-end p-2 pointer-events-none";
+                
+                const badgeSize = isSmallGrid ? 'w-5 h-5 text-[10px]' : 'w-8 h-8 text-sm';
+                overlay.innerHTML = `<div class="check-badge bg-blue-600 text-white ${badgeSize} rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-check"></i></div>`;
+                
+                if (appState.notes[photo.id]) {
+                    const noteBadge = document.createElement('div');
+                    const rightPos = isSmallGrid ? 'right-8' : 'right-12';
+                    noteBadge.className = `note-badge absolute top-2 ${rightPos} bg-yellow-500 text-white ${badgeSize} rounded-full flex items-center justify-center shadow-md z-20 pointer-events-none`;
+                    noteBadge.innerHTML = '<i class="fa-solid fa-comment-dots"></i>';
+                    overlay.appendChild(noteBadge);
+                }
+
+                const bottomArea = document.createElement('div');
+                const bottomPad = isSmallGrid ? 'p-1.5 pt-4' : 'p-3 pt-8';
+                const textSize = isSmallGrid ? 'text-[9px]' : 'text-xs';
+                const btnSize = isSmallGrid ? 'w-5 h-5 text-[10px] rounded' : 'w-8 h-8 rounded-lg';
+
+                bottomArea.className = `absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent ${bottomPad} flex justify-between items-end z-20`;
+                
+                const nameText = document.createElement('p');
+                nameText.className = `text-white ${textSize} font-medium truncate drop-shadow-md w-3/4`;
+                nameText.textContent = photo.name;
+
+                const zoomBtn = document.createElement('button');
+                zoomBtn.className = `text-white bg-black/40 hover:bg-blue-600 ${btnSize} flex items-center justify-center shadow-lg transition-colors`;
+                zoomBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass-plus"></i>';
+                
+                const targetIndex = appState.viewMode === 'selected' ? index : globalIndex;
+                zoomBtn.onclick = (e) => { e.stopPropagation(); openLightbox(targetIndex); };
+
+                bottomArea.appendChild(nameText); bottomArea.appendChild(zoomBtn);
+                card.appendChild(img); card.appendChild(overlay); card.appendChild(bottomArea);
+                grid.appendChild(card);
+            });
+            renderPagination(photosToProcess.length);
+        }
+
+        function renderPagination(totalItems) {
+            const container = document.getElementById('paginationContainer');
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            if (totalPages <= 1) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden'); container.innerHTML = '';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 ${appState.currentPage === 1 ? 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed border border-transparent' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 shadow-sm'}`;
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i> Prev';
+            prevBtn.disabled = appState.currentPage === 1;
+            prevBtn.onclick = () => changePage(appState.currentPage - 1);
+            container.appendChild(prevBtn);
+
+            const indicator = document.createElement('span');
+            indicator.className = 'px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600';
+            indicator.textContent = `${appState.currentPage} / ${totalPages}`;
+            container.appendChild(indicator);
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 ${appState.currentPage === totalPages ? 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed border border-transparent' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 shadow-sm'}`;
+            nextBtn.innerHTML = 'Next <i class="fa-solid fa-chevron-right"></i>';
+            nextBtn.disabled = appState.currentPage === totalPages;
+            nextBtn.onclick = () => changePage(appState.currentPage + 1);
+            container.appendChild(nextBtn);
+        }
+
+        function changePage(newPage) {
+            const photosToProcess = appState.viewMode === 'selected' ? Array.from(appState.selectedMap.values()) : appState.photos;
+            const totalPages = Math.ceil(photosToProcess.length / ITEMS_PER_PAGE);
+            if (newPage < 1 || newPage > totalPages) return;
+            appState.currentPage = newPage; renderGallery();
+            document.getElementById('galleryContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function toggleSelect(photoObj, cardElement) {
+            if (appState.selectedMap.has(photoObj.id)) {
+                appState.selectedMap.delete(photoObj.id); 
+                delete appState.notes[photoObj.id]; 
+                cardElement.classList.remove('selected');
+            } else {
+                if (appState.kuota !== null && appState.selectedMap.size >= appState.kuota) {
+                    return showAlert(TRANSLATIONS[appState.lang].alertLimit, 'error');
+                }
+                appState.selectedMap.set(photoObj.id, photoObj); 
+                cardElement.classList.add('selected');
+            }
+            updateActionBar(); saveProgress();
+            if (appState.viewMode === 'all') updateViewModeText();
+        }
+
+        function updateActionBar() {
+            const count = appState.selectedMap.size;
+            const bar = document.getElementById('actionBar');
+            document.getElementById('selectedCount').textContent = count;
+            
+            if (appState.kuota !== null) {
+                const percentage = Math.min((count / appState.kuota) * 100, 100);
+                const quotaBar = document.getElementById('quotaBar');
+                
+                document.getElementById('quotaText').textContent = `${count} / ${appState.kuota}`;
+                quotaBar.style.width = `${percentage}%`;
+                
+                if (percentage >= 100) {
+                    quotaBar.classList.replace('bg-blue-600', 'bg-green-500'); quotaBar.classList.replace('bg-yellow-500', 'bg-green-500');
+                    document.getElementById('quotaText').classList.add('text-green-600'); document.getElementById('quotaText').classList.remove('dark:text-white');
+                } else if (percentage >= 80) {
+                    quotaBar.classList.replace('bg-blue-600', 'bg-yellow-500'); quotaBar.classList.replace('bg-green-500', 'bg-yellow-500');
+                    document.getElementById('quotaText').classList.remove('text-green-600'); document.getElementById('quotaText').classList.add('dark:text-white');
+                } else {
+                    quotaBar.classList.replace('bg-green-500', 'bg-blue-600'); quotaBar.classList.replace('bg-yellow-500', 'bg-blue-600');
+                    document.getElementById('quotaText').classList.remove('text-green-600'); document.getElementById('quotaText').classList.add('dark:text-white');
+                }
+            }
+            if (count > 0) { bar.classList.remove('translate-y-full'); } else { bar.classList.add('translate-y-full'); }
+        }
+
+        function downloadList() {
+            if (appState.selectedMap.size === 0) return;
+            const selectedPhotos = Array.from(appState.selectedMap.values());
+            const vendor = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.namaVendor) ? CONFIG_APP.namaVendor : 'Studio';
+            
+            let textContent = `LIST FOTO PILIHAN KLIEN\n=======================\nLayanan : ${vendor}\nKlien   : ${appState.clientName || 'Klien'}\nTotal   : ${selectedPhotos.length} Foto\n=======================\n\n`;
+            
+            selectedPhotos.forEach((p, index) => {
+                const note = appState.notes[p.id];
+                textContent += `${index + 1}. ${p.name}\n`;
+                if (note) textContent += `   Catatan: ${note}\n`;
+            });
+            
+            textContent += `\n=======================\nDicetak otomatis melalui ${vendor} Portal\n`;
+
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            const safeName = appState.clientName ? appState.clientName.replace(/\s+/g, '_') : 'klien';
+            a.download = `List_Pilihan_${safeName}.txt`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+
+        function copyToClipboard() {
+            if (appState.selectedMap.size === 0) return;
+            const selectedPhotos = Array.from(appState.selectedMap.values());
+            const vendor = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.namaVendor) ? CONFIG_APP.namaVendor : 'Studio';
+            const waNumber = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.whatsappAdmin) ? CONFIG_APP.whatsappAdmin : '';
+            
+            let textToCopy = `*List Foto Pilihan Client*\nLayanan: ${vendor}\nKlien: *${appState.clientName}*\nTotal: ${selectedPhotos.length} Foto\n\n`;
+            selectedPhotos.forEach((p, index) => {
+                const note = appState.notes[p.id];
+                textToCopy += `${index + 1}. ${p.name}\n`;
+                if (note) textToCopy += `   _Catatan: ${note}_\n`;
+            });
+            textToCopy += `\n_Dikirim dari ${vendor} Portal_`;
+
+            if (waNumber) {
+                const encodedText = encodeURIComponent(textToCopy);
+                window.open(`https://wa.me/${waNumber}?text=${encodedText}`, '_blank');
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy; textArea.style.position = "fixed"; textArea.style.top = "-9999px"; textArea.style.left = "-9999px";
+                document.body.appendChild(textArea); textArea.focus(); textArea.select();
+                try {
+                    if (document.execCommand('copy')) showAlert(TRANSLATIONS[appState.lang].alertCopy, 'success');
+                } catch (err) { showAlert('Error copying text.', 'error'); }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function preloadNeighbors(currentIndex, photosArray) {
+            if (currentIndex < photosArray.length - 1) {
+                const imgNext = new Image();
+                imgNext.src = photosArray[currentIndex + 1].fullUrl || photosArray[currentIndex + 1].url;
+            }
+            if (currentIndex > 0) {
+                const imgPrev = new Image();
+                imgPrev.src = photosArray[currentIndex - 1].fullUrl || photosArray[currentIndex - 1].url;
+            }
+        }
+
+        function openLightbox(index) {
+            const lightbox = document.getElementById('lightbox');
+            const imgEl = document.getElementById('lightboxImg');
+            const isCurrentlyOpen = !lightbox.classList.contains('hidden');
+
+            const photosToProcess = appState.viewMode === 'selected' ? Array.from(appState.selectedMap.values()) : appState.photos;
+
+            if (isCurrentlyOpen) {
+                imgEl.classList.remove('opacity-100', 'scale-100');
+                imgEl.classList.add('opacity-0', 'scale-95');
+                
+                setTimeout(() => {
+                    currentZoomIndex = index; 
+                    currentZoomPhoto = photosToProcess[index];
+                    document.getElementById('lightboxTitle').textContent = `${currentZoomPhoto.name} (${index + 1} of ${photosToProcess.length})`;
+                    document.getElementById('lightboxImg').src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
+                    updateLightboxSelectBtn();
+                    
+                    void imgEl.offsetWidth;
+                    imgEl.classList.remove('opacity-0', 'scale-95'); 
+                    imgEl.classList.add('opacity-100', 'scale-100');
+
+                    preloadNeighbors(currentZoomIndex, photosToProcess);
+                }, 200); 
+
+            } else {
+                currentZoomIndex = index; 
+                currentZoomPhoto = photosToProcess[index];
+                document.getElementById('lightboxTitle').textContent = `${currentZoomPhoto.name} (${index + 1} of ${photosToProcess.length})`;
+                document.getElementById('lightboxImg').src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
+                updateLightboxSelectBtn();
+                
+                imgEl.classList.remove('opacity-0', 'scale-95');
+                imgEl.classList.add('opacity-100', 'scale-100');
+                
+                lightbox.classList.remove('hidden'); 
+                setTimeout(() => { lightbox.classList.replace('opacity-0', 'opacity-100'); }, 10);
+                document.body.style.overflow = 'hidden';
+
+                preloadNeighbors(currentZoomIndex, photosToProcess);
+            }
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => { 
+                lightbox.classList.add('hidden'); currentZoomPhoto = null; document.body.style.overflow = 'auto'; renderGallery(); 
+            }, 300);
+        }
+
+        function nextPhoto(e) { 
+            if(e) e.stopPropagation(); 
+            const photosToProcess = appState.viewMode === 'selected' ? Array.from(appState.selectedMap.values()) : appState.photos;
+            if (currentZoomIndex < photosToProcess.length - 1) openLightbox(currentZoomIndex + 1); 
+        }
+        function prevPhoto(e) { 
+            if(e) e.stopPropagation(); 
+            if (currentZoomIndex > 0) openLightbox(currentZoomIndex - 1); 
+        }
+
+        function toggleLightboxSelect() {
+            if (!currentZoomPhoto) return;
+            if (appState.selectedMap.has(currentZoomPhoto.id)) {
+                appState.selectedMap.delete(currentZoomPhoto.id); delete appState.notes[currentZoomPhoto.id]; 
+            } else {
+                if (appState.kuota !== null && appState.selectedMap.size >= appState.kuota) {
+                    return showAlert(TRANSLATIONS[appState.lang].alertLimit, 'error');
+                }
+                appState.selectedMap.set(currentZoomPhoto.id, currentZoomPhoto);
+            }
+            updateLightboxSelectBtn(); updateActionBar(); saveProgress(); 
+            if (appState.viewMode === 'all') updateViewModeText();
+        }
+
+        function updateLightboxSelectBtn() {
+            const btn = document.getElementById('lightboxSelectBtn');
+            const noteArea = document.getElementById('lightboxNote');
+            const langData = TRANSLATIONS[appState.lang];
+            const isSelected = appState.selectedMap.has(currentZoomPhoto.id);
+
+            if (isSelected) {
+                btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> <span id="btnSelectText">${langData.btnSelected}</span>`;
+                btn.className = "px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition flex items-center justify-center shadow-lg w-full sm:w-auto";
+                noteArea.classList.remove('hidden'); noteArea.value = appState.notes[currentZoomPhoto.id] || '';
+            } else {
+                btn.innerHTML = `<i class="fa-regular fa-square-check mr-2"></i> <span id="btnSelectText">${langData.btnSelect}</span>`;
+                btn.className = "px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition flex items-center justify-center shadow-lg border border-slate-600 w-full sm:w-auto";
+                noteArea.classList.add('hidden');
+            }
+        }
+
+        function saveNote() {
+            if (!currentZoomPhoto) return;
+            const noteText = document.getElementById('lightboxNote').value.trim();
+            if (noteText) appState.notes[currentZoomPhoto.id] = noteText;
+            else delete appState.notes[currentZoomPhoto.id];
+            saveProgress(); 
+        }
+    </script>
+</body>
+</html>

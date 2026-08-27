@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto RAW Sorter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .log-container {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-slate-900 shadow-lg sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/20 text-white w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight tracking-tight">Auto RAW Sorter</h1>
+                    <p class="text-xs text-slate-300 font-medium uppercase tracking-wider">Smart File Processor</p>
+                </div>
+            </div>
+            
+            <a href="generatorLink.html" target="_blank" class="px-4 py-2 md:px-5 md:py-2.5 bg-white text-blue-600 hover:bg-blue-50 font-bold rounded-lg text-xs md:text-sm transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-link"></i> <span class="hidden md:inline">Generate Link Client</span><span class="md:hidden">Generator</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-4 mb-6 flex gap-3 text-sm shadow-sm">
+            <i class="fa-solid fa-circle-info mt-0.5 text-blue-600"></i>
+            <div>
+                <strong class="font-bold block mb-1">Informasi Penting:</strong>
+                Gunakan browser <b>Google Chrome</b> atau <b>Microsoft Edge</b> versi terbaru. Aplikasi ini mengakses memori lokal komputer Anda, sehingga akan muncul notifikasi "Izinkan akses" (Allow access) dari browser.
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Panel Kiri: Pengaturan Folder -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4 relative overflow-hidden">
+                <h2 class="font-bold text-lg text-slate-800 border-b border-slate-100 pb-3"><i class="fa-solid fa-folder-tree mr-2 text-blue-600"></i> Pengaturan Folder</h2>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">1. Folder Sumber (RAW Asli)</label>
+                    <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Pilih folder induk, sistem akan mencari otomatis ke dalam sub-folder (Cam 1, Cam 2, dll).</p>
+                    <button id="btnSource" onclick="selectSource()" class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition flex items-center justify-center gap-2 border border-slate-200 shadow-sm">
+                        <i class="fa-regular fa-folder-open text-blue-500"></i> Pilih Folder Sumber
+                    </button>
+                    <p id="sourcePath" class="text-xs text-slate-500 mt-2 truncate hidden"><i class="fa-solid fa-check text-green-500 mr-1"></i> Terpilih: <span class="font-mono"></span></p>
+                </div>
+
+                <div class="h-px bg-slate-100 w-full my-2"></div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">2. Folder Tujuan (Hasil Copy)</label>
+                    <button id="btnDest" onclick="selectDest()" class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition flex items-center justify-center gap-2 border border-slate-200 shadow-sm">
+                        <i class="fa-solid fa-folder-plus text-blue-500"></i> Pilih Folder Tujuan
+                    </button>
+                    <p id="destPath" class="text-xs text-slate-500 mt-2 truncate hidden"><i class="fa-solid fa-check text-green-500 mr-1"></i> Terpilih: <span class="font-mono"></span></p>
+                </div>
+            </div>
+
+            <!-- Panel Kanan: Input List -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
+                <h2 class="font-bold text-lg text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fa-solid fa-paste mr-2 text-blue-600"></i> List Foto dari Klien</h2>
+                <textarea id="fileList" class="w-full flex-grow bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-blue-600 outline-none transition resize-none font-mono shadow-inner" placeholder="Paste daftar nama file dari WhatsApp klien di sini...&#10;&#10;Contoh:&#10;=======================&#10;LAYANAN : PORTAL CLIENT&#10;KLIEN : VERA & WENDY&#10;TOTAL : 11 FOTO&#10;=======================&#10;&#10;1. WIJ07477&#10;2. WIJ07289&#10;   Catatan: Hapus jerawat"></textarea>
+            </div>
+        </div>
+
+        <button id="processBtn" onclick="processFiles()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 mb-6 text-lg">
+            <i class="fa-solid fa-bolt"></i> Mulai Sortir & Copy File
+        </button>
+
+        <!-- Panel Log / Terminal -->
+        <div class="bg-slate-900 rounded-2xl p-6 shadow-lg overflow-hidden flex flex-col h-64 border border-slate-800">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                <h3 class="text-white font-bold text-sm"><i class="fa-solid fa-terminal mr-2 text-slate-400"></i> Proses Log</h3>
+                <span id="progressText" class="text-green-400 font-bold text-sm bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">0 / 0 File Tercopy</span>
+            </div>
+            <div id="logOutput" class="log-container overflow-y-auto flex-grow text-xs leading-relaxed space-y-1">
+                <div class="text-slate-400">Sistem siap. Silakan pilih folder dan masukkan list foto.</div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-6 mt-auto border-t border-slate-200">
+        <p class="text-sm text-slate-400">&copy; <script>document.write(new Date().getFullYear())</script> Auto RAW Sorter - Professional Tool.</p>
+    </footer>
+
+    <!-- LOGIKA JAVASCRIPT -->
+    <script>
+        let sourceHandle = null;
+        let destHandle = null;
+
+        async function selectSource() {
+            try {
+                sourceHandle = await window.showDirectoryPicker();
+                const pathEl = document.getElementById('sourcePath');
+                pathEl.classList.remove('hidden');
+                pathEl.querySelector('span').innerText = sourceHandle.name;
+                document.getElementById('btnSource').classList.replace('bg-slate-50', 'bg-green-50');
+                document.getElementById('btnSource').classList.replace('text-slate-700', 'text-green-700');
+                document.getElementById('btnSource').classList.replace('border-slate-200', 'border-green-300');
+            } catch (err) {
+                console.log("Pemilihan folder sumber dibatalkan.", err);
+            }
+        }
+
+        async function selectDest() {
+            try {
+                destHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                const pathEl = document.getElementById('destPath');
+                pathEl.classList.remove('hidden');
+                pathEl.querySelector('span').innerText = destHandle.name;
+                document.getElementById('btnDest').classList.replace('bg-slate-50', 'bg-green-50');
+                document.getElementById('btnDest').classList.replace('text-slate-700', 'text-green-700');
+                document.getElementById('btnDest').classList.replace('border-slate-200', 'border-green-300');
+            } catch (err) {
+                console.log("Pemilihan folder tujuan dibatalkan.", err);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logOutput').innerHTML = '';
+        }
+
+        function addLog(message, type = "info") {
+            const logBox = document.getElementById('logOutput');
+            const div = document.createElement('div');
+            
+            if (type === "error") {
+                div.className = "text-red-400 font-bold";
+                div.innerHTML = `<i class="fa-solid fa-xmark mr-1"></i> ${message}`;
+            } else if (type === "success") {
+                div.className = "text-green-400";
+                div.innerHTML = `<i class="fa-solid fa-check mr-1"></i> ${message}`;
+            } else if (type === "warning") {
+                div.className = "text-yellow-400";
+                div.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${message}`;
+            } else {
+                div.className = "text-slate-300";
+                div.innerHTML = `<i class="fa-solid fa-angle-right mr-1"></i> ${message}`;
+            }
+            
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // Fungsi KHUSUS untuk mengambil base name dari file yang ada di Hardisk
+        function getBaseName(filename) {
+            let name = filename.trim().toUpperCase();
+            const dotIndex = name.lastIndexOf('.');
+            if (dotIndex !== -1) {
+                return name.substring(0, dotIndex).trim();
+            }
+            return name.trim();
+        }
+
+        // FUNGSI BARU: Parser Cerdas untuk mengekstrak hanya nama file dari format list Portal
+        function parseClientList(rawText) {
+            let list = [];
+            const lines = rawText.split('\n');
+            
+            for (let line of lines) {
+                line = line.trim();
+                
+                // 1. Abaikan baris kosong dan baris struk informasi (Metadata)
+                if (!line || 
+                    line.startsWith('=') || 
+                    line.toUpperCase().includes('LAYANAN :') || 
+                    line.toUpperCase().includes('KLIEN :') || 
+                    line.toUpperCase().includes('TOTAL :') || 
+                    line.toUpperCase().includes('CATATAN:') || 
+                    line.toUpperCase().includes('DICETAK OTOMATIS')) {
+                    continue;
+                }
+                
+                // 2. Hapus angka urutan list (contoh: "1. WIJ07477" -> "WIJ07477")
+                let cleanName = line.replace(/^\d+\.\s*/, '').trim();
+                
+                // 3. Hapus ekstensi file jika kebetulan ada dari client
+                const dotIndex = cleanName.lastIndexOf('.');
+                if (dotIndex !== -1) {
+                    cleanName = cleanName.substring(0, dotIndex);
+                }
+                
+                // 4. Ubah ke huruf kapital untuk pencocokan yang akurat
+                cleanName = cleanName.trim().toUpperCase();
+                
+                // Jika masih ada nama tersisa, masukkan ke target pencarian
+                if (cleanName) {
+                    list.push(cleanName);
+                }
+            }
+            
+            // Mengembalikan list tanpa duplikat (untuk keamanan)
+            return [...new Set(list)]; 
+        }
+
+        async function searchFilesInDirectory(dirHandle, notFoundList, copiedCountRef, totalTarget) {
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'file') {
+                    // Gunakan base name untuk mencocokkan nama file di komputer dengan list target
+                    const fileBaseName = getBaseName(entry.name);
+                    const listIndex = notFoundList.findIndex(t => t === fileBaseName);
+                    
+                    if (listIndex !== -1) {
+                        addLog(`Menemukan: ${entry.name} (di folder /${dirHandle.name})`, "success");
+                        const file = await entry.getFile();
+                        const newFileHandle = await destHandle.getFileHandle(entry.name, { create: true });
+                        const writable = await newFileHandle.createWritable();
+                        await writable.write(file);
+                        await writable.close();
+                        
+                        copiedCountRef.count++;
+                        document.getElementById('progressText').innerText = `${copiedCountRef.count} / ${totalTarget} File Tercopy`;
+                        
+                        // Hapus dari list yang belum ditemukan
+                        notFoundList.splice(listIndex, 1);
+                    }
+                } else if (entry.kind === 'directory') {
+                    // Masuk ke sub-folder secara rekursif
+                    await searchFilesInDirectory(entry, notFoundList, copiedCountRef, totalTarget);
+                }
+                
+                // Jika semua file sudah ditemukan, hentikan pencarian (Hemat resource)
+                if (notFoundList.length === 0) return;
+            }
+        }
+
+        async function processFiles() {
+            if (!sourceHandle || !destHandle) {
+                alert("Harap pilih Folder Sumber dan Folder Tujuan terlebih dahulu!");
+                return;
+            }
+
+            const rawListText = document.getElementById('fileList').value;
+            
+            // Panggil parser baru yang cerdas
+            const targetList = parseClientList(rawListText);
+
+            if (targetList.length === 0) {
+                alert("Tidak ada nama file yang bisa diekstrak dari list. Pastikan format list benar!");
+                return;
+            }
+
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Sedang Memproses...`;
+            
+            btn.classList.replace('bg-blue-600', 'bg-slate-400');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-slate-500');
+            btn.classList.remove('shadow-blue-600/30');
+            
+            clearLog();
+            addLog(`Memulai proses sortir untuk ${targetList.length} file foto unik...`);
+            addLog(`Sistem mencari otomatis ke dalam seluruh sub-folder.`);
+            
+            let copiedCountRef = { count: 0 }; 
+            let notFoundList = [...targetList]; 
+
+            try {
+                // Eksekusi pencarian rekursif
+                await searchFilesInDirectory(sourceHandle, notFoundList, copiedCountRef, targetList.length);
+
+                addLog(`----------------------------------------`);
+                addLog(`PROSES SELESAI! Berhasil menyalin ${copiedCountRef.count} file.`, "success");
+                
+                if (notFoundList.length > 0) {
+                    addLog(`PERINGATAN: Ada ${notFoundList.length} file yang tidak ditemukan di seluruh folder!`, "error");
+                    addLog(`Daftar file tidak ditemukan: ${notFoundList.join(', ')}`, "warning");
+                } else {
+                    addLog(`Luar biasa! Seluruh foto dari list berhasil ditemukan dan disalin.`, "success");
+                }
+
+            } catch (error) {
+                console.error(error);
+                addLog(`Proses terhenti karena error: ${error.message}`, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-bolt mr-2"></i> Mulai Sortir & Copy File`;
+                
+                btn.classList.replace('bg-slate-400', 'bg-blue-600');
+                btn.classList.replace('hover:bg-slate-500', 'hover:bg-blue-700');
+                btn.classList.add('shadow-blue-600/30');
+            }
+        }
+    </script>
+</body>
+</html>
