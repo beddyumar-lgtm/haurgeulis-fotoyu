@@ -8,6 +8,6 @@ const CONFIG_APP = {
     namaVendor: "HAURGEULIS FOTOYU",
 
     // 2. Google Drive API Key (Penting agar galeri bisa memuat foto)
-    googleApiKey: "AIzaSyAZczbLeVTXl-QKqLDJFWQLCd-lW9jqqxo",
+    googleApiKey: "AIzaSyAX6dyCdzJNlKKkTVQejSx9ReGYl7jpy98",
     whatsappAdmin: "6287875142599" // <-- TAMBAHKAN BARIS INI (Ganti dengan nomor WA admin)
 };
