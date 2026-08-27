@@ -58,7 +58,6 @@
             box-shadow: 0 0 0 3px #3b82f6; 
         }
 
-        /* Triangle untuk tooltip */
         .tooltip-triangle {
             position: absolute;
             bottom: -4px;
@@ -66,7 +65,38 @@
             transform: translateX(-50%) rotate(45deg);
             width: 10px;
             height: 10px;
-            background-color: #2563eb; /* blue-600 */
+            background-color: #2563eb; 
+        }
+        .tooltip-triangle-right {
+            position: absolute;
+            top: 50%;
+            right: -4px;
+            transform: translateY(-50%) rotate(45deg);
+            width: 10px;
+            height: 10px;
+            background-color: #2563eb; 
+        }
+
+        /* WATERMARK DYNAMIC (CANVAS BACKGROUND) CSS */
+        .watermark-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 15;
+            border-radius: inherit; /* Menyatu dengan lengkungan foto */
+            /* Background image akan di-inject via JS dari canvas */
+            background-repeat: repeat;
+            background-position: center;
+        }
+
+        .anti-copy-img {
+            -webkit-touch-callout: none !important; 
+            -webkit-user-select: none !important;
+            -khtml-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-user-drag: none !important;
         }
     </style>
     
@@ -173,7 +203,6 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         
-                        <!-- TOMBOL GRID DENGAN ANIMASI BALON TOOLTIP -->
                         <div class="relative">
                             <button onclick="hideTooltip('gridTooltip'); toggleGridSize()" class="text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2 px-3 rounded-lg font-medium cursor-pointer shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition" title="Ubah Ukuran Grid">
                                 <i class="fa-solid fa-table-cells-large"></i>
@@ -184,7 +213,6 @@
                             </div>
                         </div>
 
-                        <!-- DROPDOWN URUTAN -->
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fa-solid fa-arrow-down-a-z text-slate-400 text-sm"></i>
@@ -200,7 +228,6 @@
                             </div>
                         </div>
 
-                        <!-- TOMBOL ACAK LAGI DENGAN ANIMASI BALON TOOLTIP -->
                         <div class="relative">
                             <button id="btnReshuffle" onclick="hideTooltip('reshuffleTooltip'); applySort('random')" class="hidden text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 px-3 rounded-lg font-bold transition shadow-sm hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600">
                                 <i class="fa-solid fa-dice"></i> <span class="hidden sm:inline ml-1" data-i18n="btnReshuffle">Acak Lagi</span>
@@ -299,20 +326,51 @@
 
     <!-- LIGHTBOX ZOOM -->
     <div id="lightbox" class="fixed inset-0 bg-black/95 z-[60] hidden flex-col justify-center items-center opacity-0 transition-opacity duration-300 backdrop-blur-sm touch-pan-y">
+        
         <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent">
             <p id="lightboxTitle" class="text-white font-medium drop-shadow-md text-sm md:text-base ml-2">Photo Name</p>
             <button onclick="closeLightbox()" class="text-white hover:text-red-400 w-10 h-10 flex items-center justify-center text-2xl bg-black/50 hover:bg-white/20 rounded-full transition"><i class="fa-solid fa-xmark"></i></button>
         </div>
+
+        <div class="absolute right-4 top-20 flex flex-col gap-3 z-50">
+            <div class="relative">
+                <button onclick="changeZoom(0.5, event)" class="w-10 h-10 bg-black/60 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-lg transition shadow-lg border border-slate-600"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                <div id="zoomTooltip" class="hidden opacity-0 absolute right-14 top-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-xl pointer-events-none whitespace-nowrap transition-all duration-300">
+                    <span data-i18n="zoomTip">Ketuk 2x atau gunakan ini untuk Zoom</span>
+                    <div class="tooltip-triangle-right"></div>
+                </div>
+            </div>
+            <button onclick="changeZoom(-0.5, event)" class="w-10 h-10 bg-black/60 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-lg transition shadow-lg border border-slate-600"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+        </div>
+
         <button onclick="prevPhoto(event)" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/50 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl md:text-2xl z-50 transition hidden md:flex"><i class="fa-solid fa-chevron-left"></i></button>
         <button onclick="nextPhoto(event)" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-black/50 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl md:text-2xl z-50 transition hidden md:flex"><i class="fa-solid fa-chevron-right"></i></button>
-        <div class="w-full h-full flex items-center justify-center p-2 pb-32 md:pb-24 pointer-events-none">
-            <img id="lightboxImg" src="" class="max-w-full max-h-full object-contain rounded-md shadow-2xl transition-all duration-200 ease-in-out pointer-events-auto select-none opacity-100 transform scale-100">
+        
+        <!-- AREA GAMBAR DENGAN WRAPPER KHUSUS WATERMARK -->
+        <div id="lightboxScrollArea" class="w-full h-full flex items-center justify-center p-2 pb-32 md:pb-24 relative overflow-hidden">
+            
+            <div id="lightboxImageWrapper" class="relative inline-flex justify-center items-center max-w-full max-h-full transform origin-center transition-all duration-200 ease-in-out shadow-2xl rounded-md opacity-0 scale-95">
+                
+                <img id="lightboxImg" src="" class="max-w-full max-h-full rounded-md select-none block pointer-events-none">
+                
+                <!-- WATERMARK CONTAINER DI LIGHTBOX TERIKAT KE GAMBAR -->
+                <div id="lightboxWatermark" class="watermark-overlay hidden">
+                    <!-- Background Canvas akan di-inject via JS -->
+                </div>
+
+            </div>
+
         </div>
+
         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-11/12 max-w-md z-50">
             <p class="text-white/50 text-xs md:hidden text-center mb-[-5px] animate-pulse"><i class="fa-solid fa-arrows-left-right"></i> <span data-i18n="swipe">Geser kiri/kanan</span></p>
-            <button id="lightboxSelectBtn" onclick="toggleLightboxSelect()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition flex items-center justify-center shadow-lg border border-slate-600 w-full sm:w-auto">
-                <i class="fa-regular fa-square-check mr-2"></i> <span id="btnSelectText">Pilih Foto Ini</span>
-            </button>
+            
+            <div class="flex flex-row gap-2 w-full justify-center">
+                <button id="lightboxSelectBtn" onclick="toggleLightboxSelect()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition flex items-center justify-center shadow-lg border border-slate-600 w-full sm:w-auto">
+                    <i class="fa-regular fa-square-check mr-2"></i> <span id="btnSelectText">Pilih Foto Ini</span>
+                </button>
+            </div>
+            
             <textarea id="lightboxNote" oninput="saveNote()" data-i18n="notePlaceholder" class="w-full bg-slate-800/90 text-white placeholder-slate-400 text-sm rounded-xl p-3 border border-slate-600 focus:outline-none focus:border-slate-400 hidden transition-all shadow-lg backdrop-blur-sm" rows="2" placeholder="Catatan edit (opsional), misal: hapus jerawat..."></textarea>
         </div>
     </div>
@@ -322,12 +380,16 @@
         const ITEMS_PER_PAGE = 200; 
         
         let appState = { 
-            rootFolderId: null, folderId: null, clientName: '', 
+            rootFolderId: null, folderId: null, currentFolderName: '', clientName: '', 
             photos: [], originalPhotos: [], folders: [], folderHistory: [],
             selectedMap: new Map(), 
             notes: {}, currentPage: 1, kuota: null, 
             viewMode: 'all', sortOrder: 'default', lang: 'id',
-            gridMode: 2 
+            gridMode: 2, 
+            isProtected: false, 
+            isWatermarked: false,
+            watermarkDataUrl_Small: null,
+            watermarkDataUrl_Large: null
         };
 
         const TRANSLATIONS = {
@@ -371,7 +433,8 @@
                 alertEmpty: "Belum ada foto yang dipilih.",
                 alertCopy: "List foto disalin! Silahkan paste di WhatsApp.",
                 gridTip: "Ubah Baris Foto",
-                reshuffleTip: "Tekan ini untuk acak foto"
+                reshuffleTip: "Tekan ini untuk acak foto",
+                zoomTip: "Ketuk 2x atau gunakan ini untuk Zoom"
             },
             en: {
                 subtitle: "Secure Selection Tool",
@@ -413,9 +476,46 @@
                 alertEmpty: "No photos selected yet.",
                 alertCopy: "List copied! Please paste it in WhatsApp.",
                 gridTip: "Change Grid Rows",
-                reshuffleTip: "Click to reshuffle"
+                reshuffleTip: "Click to reshuffle",
+                zoomTip: "Double tap or use this to Zoom"
             }
         };
+
+        // --- FUNGSI CANVAS GENERATE WATERMARK ---
+        function createWatermarkImage(text, isLarge) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Ukuran Canvas diperkecil agar pola watermark LEBIH PADAT (rapat)
+            const boxSize = isLarge ? 140 : 70;
+            canvas.width = boxSize;
+            canvas.height = boxSize;
+
+            ctx.translate(boxSize / 2, boxSize / 2);
+            ctx.rotate(-35 * Math.PI / 180); // Dimiringkan sedikit lebih tajam (-35 derajat)
+
+            ctx.font = `800 ${isLarge ? '16px' : '9px'} Inter, sans-serif`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; // Konsisten di Opacity 30%
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Efek bayangan tipis agar terbaca di area foto yang putih/terang
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+
+            ctx.fillText(text.toUpperCase(), 0, 0);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        function initWatermarks() {
+            if (!appState.isWatermarked) return;
+            const vendorNameStr = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.namaVendor) ? CONFIG_APP.namaVendor : 'WATERMARK';
+            appState.watermarkDataUrl_Small = createWatermarkImage(vendorNameStr, false);
+            appState.watermarkDataUrl_Large = createWatermarkImage(vendorNameStr, true);
+        }
 
         function toggleDarkMode() {
             const html = document.documentElement;
@@ -467,6 +567,12 @@
         let hasSeenTutorial = false; 
         let tooltipTimeout;
 
+        let zoomScale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+        let hasSeenZoomTooltip = false;
+        let lastTap = 0;
+
         document.addEventListener("DOMContentLoaded", () => {
             updateDarkModeIcon(document.documentElement.classList.contains('dark'));
 
@@ -480,6 +586,28 @@
             const urlName = urlParams.get('n');
             const urlKuota = urlParams.get('k');
             const autoId = urlParams.get('i');
+            
+            appState.isProtected = urlParams.get('prot') === '1';
+            appState.isWatermarked = urlParams.get('wm') === '1';
+
+            if (appState.isProtected) {
+                document.addEventListener('contextmenu', event => {
+                    if(event.target.tagName === 'IMG') event.preventDefault();
+                });
+                document.addEventListener('dragstart', event => {
+                    if(event.target.tagName === 'IMG') event.preventDefault();
+                });
+                document.addEventListener('keydown', event => {
+                    if (event.ctrlKey && (event.key === 's' || event.key === 'S' || event.key === 'p' || event.key === 'P')) event.preventDefault();
+                });
+                
+                document.documentElement.style.WebkitTouchCallout = 'none';
+                document.documentElement.style.userSelect = 'none';
+                document.body.style.WebkitTouchCallout = 'none';
+                document.body.style.userSelect = 'none';
+            }
+
+            initWatermarks(); // Jalankan inisialisasi pembuat gambar watermark
 
             if (urlName) {
                 appState.clientName = decodeURIComponent(urlName).replace(/-/g, ' ');
@@ -517,19 +645,115 @@
 
             const lightboxEl = document.getElementById('lightbox');
             lightboxEl.addEventListener('touchstart', e => {
+                if (zoomScale > 1) return; 
                 if (e.target.tagName.toLowerCase() === 'textarea') return;
                 touchstartX = e.changedTouches[0].screenX;
             }, { passive: true });
             lightboxEl.addEventListener('touchend', e => {
+                if (zoomScale > 1) return; 
                 if (e.target.tagName.toLowerCase() === 'textarea') return;
                 touchendX = e.changedTouches[0].screenX;
                 handleSwipeGesture();
             }, { passive: true });
             
             applyTranslations(); 
+            setupZoomDragEvents();
         });
 
-        // FUNGSI ANIMASI BALON TOOLTIP
+        // --- FUNGSI ZOOM & PAN ---
+        function applyZoomPan() {
+            const wrapper = document.getElementById('lightboxImageWrapper');
+            
+            // Transformasi dilakukan pada wrapper, bukan pada IMG. 
+            wrapper.style.setProperty('--tw-scale-x', zoomScale);
+            wrapper.style.setProperty('--tw-scale-y', zoomScale);
+            wrapper.style.setProperty('--tw-translate-x', `${translateX}px`);
+            wrapper.style.setProperty('--tw-translate-y', `${translateY}px`);
+            
+            if(zoomScale > 1) {
+                wrapper.style.cursor = 'grab';
+            } else {
+                wrapper.style.cursor = 'default';
+            }
+        }
+
+        function changeZoom(step, e) {
+            if(e) e.stopPropagation();
+            const wrapper = document.getElementById('lightboxImageWrapper');
+            wrapper.style.transition = 'transform 0.3s ease-in-out'; 
+            
+            zoomScale += step;
+            if(zoomScale <= 1) {
+                zoomScale = 1;
+                translateX = 0;
+                translateY = 0;
+            }
+            if(zoomScale > 4) zoomScale = 4; 
+            
+            applyZoomPan();
+            
+            setTimeout(() => { wrapper.style.transition = ''; }, 300);
+            
+            hideTooltip('zoomTooltip');
+        }
+
+        function setupZoomDragEvents() {
+            const wrapper = document.getElementById('lightboxImageWrapper');
+
+            wrapper.addEventListener('mousedown', dragStart);
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
+
+            wrapper.addEventListener('touchstart', dragStart, {passive: false});
+            window.addEventListener('touchmove', dragMove, {passive: false});
+            window.addEventListener('touchend', dragEnd);
+        }
+
+        function dragStart(e) {
+            if (zoomScale <= 1) return;
+            if(e.type === 'touchstart') e.preventDefault(); 
+            
+            isDragging = true;
+            const wrapper = document.getElementById('lightboxImageWrapper');
+            wrapper.style.cursor = 'grabbing';
+            wrapper.style.transition = 'none'; 
+            
+            const touch = e.touches ? e.touches[0] : e;
+            startX = touch.clientX - translateX;
+            startY = touch.clientY - translateY;
+        }
+
+        function dragMove(e) {
+            if (!isDragging || zoomScale <= 1) return;
+            if(e.type === 'touchmove') e.preventDefault(); 
+            
+            const touch = e.touches ? e.touches[0] : e;
+            translateX = touch.clientX - startX;
+            translateY = touch.clientY - startY;
+            applyZoomPan();
+        }
+
+        function dragEnd(e) {
+            isDragging = false;
+            const wrapper = document.getElementById('lightboxImageWrapper');
+            if(zoomScale > 1) wrapper.style.cursor = 'grab';
+            
+            if(e && (e.type === 'touchend' || e.type === 'mouseup') && wrapper.contains(e.target)) {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    if (zoomScale === 1) changeZoom(1.5, null);
+                    else {
+                        zoomScale = 1; translateX = 0; translateY = 0; 
+                        wrapper.style.transition = 'transform 0.3s ease-in-out';
+                        applyZoomPan();
+                    }
+                    if(e.cancelable) e.preventDefault();
+                }
+                lastTap = currentTime;
+            }
+        }
+
         function hideTooltip(id) {
             const el = document.getElementById(id);
             if(el) {
@@ -546,7 +770,6 @@
             if(gt) { gt.classList.remove('hidden'); setTimeout(()=> gt.classList.replace('opacity-0', 'opacity-100'), 50); }
             if(rt && document.getElementById('sortDropdown').value === 'random') { rt.classList.remove('hidden'); setTimeout(()=> rt.classList.replace('opacity-0', 'opacity-100'), 50); }
             
-            // Auto hide tooltip dalam 8 detik agar tidak mengganggu
             tooltipTimeout = setTimeout(() => {
                 hideTooltip('gridTooltip');
                 hideTooltip('reshuffleTooltip');
@@ -589,7 +812,6 @@
                 modal.classList.remove('flex');
                 modal.classList.add('hidden');
                 
-                // Panggil Animasi Balon setelah Panduan ditutup
                 triggerTooltipsAnimation();
             }, 300);
         }
@@ -608,7 +830,7 @@
             if (!appState.rootFolderId) return;
             const dataToSave = { 
                 selected: Array.from(appState.selectedMap.entries()), 
-                notes: appState.notes 
+                notes: appState.notes
             };
             localStorage.setItem(`client_portal_save_${appState.rootFolderId}`, JSON.stringify(dataToSave));
         }
@@ -620,13 +842,53 @@
                     const data = JSON.parse(savedData);
                     appState.selectedMap = new Map(data.selected || []);
                     appState.notes = data.notes || {};
+                    
                     if (appState.selectedMap.size > 0) {
                         setTimeout(() => { updateActionBar(); }, 1000);
+                        refreshExpiredUrls();
                     }
                 } catch (e) { console.error("Gagal memuat data", e); }
             } else {
                 appState.selectedMap = new Map();
                 appState.notes = {};
+            }
+        }
+
+        async function refreshExpiredUrls() {
+            if (appState.selectedMap.size === 0) return;
+            if (typeof CONFIG_APP === 'undefined' || !CONFIG_APP.googleApiKey) return;
+            
+            const ids = Array.from(appState.selectedMap.keys());
+            
+            for (let i = 0; i < ids.length; i += 30) {
+                const chunk = ids.slice(i, i + 30);
+                const query = chunk.map(id => `id='${id}'`).join(' or ');
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,thumbnailLink)&key=${CONFIG_APP.googleApiKey}`;
+                
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.files) {
+                        let isUpdated = false;
+                        data.files.forEach(f => {
+                            if (appState.selectedMap.has(f.id)) {
+                                const p = appState.selectedMap.get(f.id);
+                                p.url = f.thumbnailLink?.replace('=s220', '=s500');
+                                p.fullUrl = f.thumbnailLink?.replace('=s220', '=s1600');
+                                appState.selectedMap.set(f.id, p);
+                                isUpdated = true;
+                            }
+                        });
+                        
+                        if (isUpdated) {
+                            saveProgress();
+                            if (appState.viewMode === 'selected') renderGallery();
+                        }
+                    }
+                } catch (e) { 
+                    console.error("Gagal refresh URL foto lama:", e); 
+                }
             }
         }
 
@@ -671,7 +933,13 @@
             appState.currentPage = 1; 
             appState.viewMode = 'all';
             
-            const displayTitle = (targetFolderId === appState.rootFolderId) ? TRANSLATIONS[appState.lang].galleryTitle : folderName;
+            let fullFolderPath = displayTitle = (targetFolderId === appState.rootFolderId) ? TRANSLATIONS[appState.lang].galleryTitle : folderName;
+            
+            if (appState.folderHistory.length > 0) {
+                const historyNames = appState.folderHistory.map(h => h.name);
+                fullFolderPath = [...historyNames, displayTitle].join(' - ');
+            }
+            
             document.getElementById('currentFolderDisplay').innerHTML = (targetFolderId === appState.rootFolderId) 
                 ? displayTitle 
                 : `<i class="fa-solid fa-folder-open text-blue-500 mr-2"></i> ${displayTitle}`;
@@ -697,7 +965,7 @@
                     let photoFiles = fetchedFiles.filter(f => f.mimeType !== 'application/vnd.google-apps.folder' && f.thumbnailLink);
                     
                     appState.photos = photoFiles.map(f => ({ 
-                        id: f.id, name: f.name, folderName: displayTitle,
+                        id: f.id, name: f.name, folderName: fullFolderPath,
                         url: f.thumbnailLink?.replace('=s220', '=s500'), 
                         fullUrl: f.thumbnailLink?.replace('=s220', '=s1600') 
                     }));
@@ -705,14 +973,12 @@
                     
                     renderFolders(); 
                     
-                    // DEFAULT ACAK SAAT LOADING
                     document.getElementById('sortDropdown').value = 'random';
                     applySort('random');
                     
                     if (!overrideFolderId) { 
                         setTimeout(() => { showTutorial(false); }, 800); 
                     } else {
-                        // Jika pindah folder dan sudah pernah lihat tutorial, langsung trigger balon
                         if(hasSeenTutorial) setTimeout(triggerTooltipsAnimation, 500);
                     }
                 } else {
@@ -772,7 +1038,7 @@
                 document.getElementById('sortDropdown').value = 'random'; 
             } else {
                 btnReshuffle.classList.add('hidden');
-                if(rtTooltip) hideTooltip('reshuffleTooltip'); // Sembunyikan balon jika bukan acak
+                if(rtTooltip) hideTooltip('reshuffleTooltip'); 
             }
 
             if (order === 'default') {
@@ -867,7 +1133,7 @@
                 
                 const img = document.createElement('img');
                 img.src = photo.url; 
-                img.className = "w-full h-full object-cover cursor-pointer transition-transform duration-300"; 
+                img.className = `w-full h-full object-cover cursor-pointer transition-transform duration-300 ${appState.isProtected ? 'anti-copy-img' : ''}`; 
                 img.loading = "lazy";
                 img.onclick = () => toggleSelect(photo, card);
                 
@@ -885,19 +1151,27 @@
                     overlay.appendChild(noteBadge);
                 }
 
+                // PENERAPAN CANVAS WATERMARK DI GRID
+                if (appState.isWatermarked && appState.watermarkDataUrl_Small) {
+                    const wmOverlay = document.createElement('div');
+                    wmOverlay.className = "watermark-overlay";
+                    wmOverlay.style.backgroundImage = `url(${appState.watermarkDataUrl_Small})`;
+                    card.appendChild(wmOverlay);
+                }
+
                 const bottomArea = document.createElement('div');
                 const bottomPad = isSmallGrid ? 'p-1.5 pt-4' : 'p-3 pt-8';
                 const textSize = isSmallGrid ? 'text-[9px]' : 'text-xs';
                 const btnSize = isSmallGrid ? 'w-5 h-5 text-[10px] rounded' : 'w-8 h-8 rounded-lg';
 
-                bottomArea.className = `absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent ${bottomPad} flex justify-between items-end z-20`;
+                bottomArea.className = `absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent ${bottomPad} flex justify-between items-end z-20 pointer-events-none`;
                 
                 const nameText = document.createElement('p');
                 nameText.className = `text-white ${textSize} font-medium truncate drop-shadow-md w-3/4`;
                 nameText.textContent = photo.name;
 
                 const zoomBtn = document.createElement('button');
-                zoomBtn.className = `text-white bg-black/40 hover:bg-blue-600 ${btnSize} flex items-center justify-center shadow-lg transition-colors`;
+                zoomBtn.className = `text-white bg-black/40 hover:bg-blue-600 ${btnSize} flex items-center justify-center shadow-lg transition-colors pointer-events-auto`;
                 zoomBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass-plus"></i>';
                 
                 const targetIndex = appState.viewMode === 'selected' ? index : globalIndex;
@@ -995,7 +1269,10 @@
             
             selectedPhotos.forEach((p, index) => {
                 const note = appState.notes[p.id];
-                textContent += `${index + 1}. ${p.name}\n`;
+                const folderInfo = p.folderName || 'Galeri Utama'; 
+                
+                textContent += `${index + 1}. ${p.name} [folder : ${folderInfo}]\n`;
+                
                 if (note) textContent += `   Catatan: ${note}\n`;
             });
             
@@ -1004,8 +1281,10 @@
             const blob = new Blob([textContent], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url;
-            const safeName = appState.clientName ? appState.clientName.replace(/\s+/g, '_') : 'klien';
-            a.download = `List_Pilihan_${safeName}.txt`;
+            
+            const safeName = appState.clientName ? appState.clientName : 'Klien';
+            a.download = `List Data Foto Edit - ${safeName}.txt`;
+            
             document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         }
 
@@ -1016,11 +1295,16 @@
             const waNumber = (typeof CONFIG_APP !== 'undefined' && CONFIG_APP.whatsappAdmin) ? CONFIG_APP.whatsappAdmin : '';
             
             let textToCopy = `*List Foto Pilihan Client*\nLayanan: ${vendor}\nKlien: *${appState.clientName}*\nTotal: ${selectedPhotos.length} Foto\n\n`;
+            
             selectedPhotos.forEach((p, index) => {
                 const note = appState.notes[p.id];
-                textToCopy += `${index + 1}. ${p.name}\n`;
+                const folderInfo = p.folderName || 'Galeri Utama';
+                
+                textToCopy += `${index + 1}. ${p.name} [folder : ${folderInfo}]\n`;
+                
                 if (note) textToCopy += `   _Catatan: ${note}_\n`;
             });
+            
             textToCopy += `\n_Dikirim dari ${vendor} Portal_`;
 
             if (waNumber) {
@@ -1050,25 +1334,39 @@
 
         function openLightbox(index) {
             const lightbox = document.getElementById('lightbox');
+            const wrapper = document.getElementById('lightboxImageWrapper');
             const imgEl = document.getElementById('lightboxImg');
             const isCurrentlyOpen = !lightbox.classList.contains('hidden');
 
             const photosToProcess = appState.viewMode === 'selected' ? Array.from(appState.selectedMap.values()) : appState.photos;
 
             if (isCurrentlyOpen) {
-                imgEl.classList.remove('opacity-100', 'scale-100');
-                imgEl.classList.add('opacity-0', 'scale-95');
+                wrapper.classList.remove('opacity-100', 'scale-100');
+                wrapper.classList.add('opacity-0', 'scale-95');
                 
                 setTimeout(() => {
                     currentZoomIndex = index; 
                     currentZoomPhoto = photosToProcess[index];
                     document.getElementById('lightboxTitle').textContent = `${currentZoomPhoto.name} (${index + 1} of ${photosToProcess.length})`;
-                    document.getElementById('lightboxImg').src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
+                    imgEl.src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
                     updateLightboxSelectBtn();
                     
-                    void imgEl.offsetWidth;
-                    imgEl.classList.remove('opacity-0', 'scale-95'); 
-                    imgEl.classList.add('opacity-100', 'scale-100');
+                    zoomScale = 1; translateX = 0; translateY = 0;
+                    wrapper.style.removeProperty('--tw-scale-x');
+                    wrapper.style.removeProperty('--tw-scale-y');
+                    wrapper.style.removeProperty('--tw-translate-x');
+                    wrapper.style.removeProperty('--tw-translate-y');
+                    wrapper.style.cursor = 'default';
+                    
+                    void wrapper.offsetWidth;
+                    wrapper.classList.remove('opacity-0', 'scale-95'); 
+                    wrapper.classList.add('opacity-100', 'scale-100');
+
+                    // PENERAPAN CANVAS WATERMARK DI LIGHTBOX
+                    if (appState.isWatermarked && appState.watermarkDataUrl_Large) {
+                        const lbWm = document.getElementById('lightboxWatermark');
+                        lbWm.style.backgroundImage = `url(${appState.watermarkDataUrl_Large})`;
+                    }
 
                     preloadNeighbors(currentZoomIndex, photosToProcess);
                 }, 200); 
@@ -1077,25 +1375,58 @@
                 currentZoomIndex = index; 
                 currentZoomPhoto = photosToProcess[index];
                 document.getElementById('lightboxTitle').textContent = `${currentZoomPhoto.name} (${index + 1} of ${photosToProcess.length})`;
-                document.getElementById('lightboxImg').src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
+                imgEl.src = currentZoomPhoto.fullUrl || currentZoomPhoto.url;
                 updateLightboxSelectBtn();
                 
-                imgEl.classList.remove('opacity-0', 'scale-95');
-                imgEl.classList.add('opacity-100', 'scale-100');
+                zoomScale = 1; translateX = 0; translateY = 0;
+                wrapper.style.removeProperty('--tw-scale-x');
+                wrapper.style.removeProperty('--tw-scale-y');
+                wrapper.style.removeProperty('--tw-translate-x');
+                wrapper.style.removeProperty('--tw-translate-y');
+                wrapper.style.cursor = 'default';
+                
+                wrapper.classList.remove('opacity-0', 'scale-95');
+                wrapper.classList.add('opacity-100', 'scale-100');
+
+                // PENERAPAN CANVAS WATERMARK DI LIGHTBOX
+                if (appState.isWatermarked && appState.watermarkDataUrl_Large) {
+                    const lbWm = document.getElementById('lightboxWatermark');
+                    lbWm.style.backgroundImage = `url(${appState.watermarkDataUrl_Large})`;
+                    lbWm.classList.remove('hidden');
+                }
                 
                 lightbox.classList.remove('hidden'); 
                 setTimeout(() => { lightbox.classList.replace('opacity-0', 'opacity-100'); }, 10);
                 document.body.style.overflow = 'hidden';
 
                 preloadNeighbors(currentZoomIndex, photosToProcess);
+                
+                if (!hasSeenZoomTooltip) {
+                    hasSeenZoomTooltip = true;
+                    setTimeout(() => {
+                        const zt = document.getElementById('zoomTooltip');
+                        zt.classList.remove('hidden');
+                        setTimeout(() => zt.classList.replace('opacity-0', 'opacity-100'), 100);
+                        setTimeout(() => {
+                            zt.classList.replace('opacity-100', 'opacity-0');
+                            setTimeout(() => zt.classList.add('hidden'), 300);
+                        }, 5000);
+                    }, 1000);
+                }
             }
         }
 
         function closeLightbox() {
             const lightbox = document.getElementById('lightbox');
+            const wrapper = document.getElementById('lightboxImageWrapper');
+            
             lightbox.classList.replace('opacity-100', 'opacity-0');
+            wrapper.classList.remove('opacity-100', 'scale-100');
+            wrapper.classList.add('opacity-0', 'scale-95');
+            
             setTimeout(() => { 
                 lightbox.classList.add('hidden'); currentZoomPhoto = null; document.body.style.overflow = 'auto'; renderGallery(); 
+                document.getElementById('lightboxWatermark').classList.add('hidden');
             }, 300);
         }
 
@@ -1112,7 +1443,8 @@
         function toggleLightboxSelect() {
             if (!currentZoomPhoto) return;
             if (appState.selectedMap.has(currentZoomPhoto.id)) {
-                appState.selectedMap.delete(currentZoomPhoto.id); delete appState.notes[currentZoomPhoto.id]; 
+                appState.selectedMap.delete(currentZoomPhoto.id); 
+                delete appState.notes[currentZoomPhoto.id]; 
             } else {
                 if (appState.kuota !== null && appState.selectedMap.size >= appState.kuota) {
                     return showAlert(TRANSLATIONS[appState.lang].alertLimit, 'error');

@@ -79,7 +79,7 @@
             <!-- Panel Kanan: Input List -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col">
                 <h2 class="font-bold text-lg text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fa-solid fa-paste mr-2 text-blue-600"></i> List Foto dari Klien</h2>
-                <textarea id="fileList" class="w-full flex-grow bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-blue-600 outline-none transition resize-none font-mono shadow-inner" placeholder="Paste daftar nama file dari WhatsApp klien di sini...&#10;&#10;Contoh:&#10;=======================&#10;LAYANAN : PORTAL CLIENT&#10;KLIEN : VERA & WENDY&#10;TOTAL : 11 FOTO&#10;=======================&#10;&#10;1. WIJ07477&#10;2. WIJ07289&#10;   Catatan: Hapus jerawat"></textarea>
+                <textarea id="fileList" class="w-full flex-grow bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-blue-600 outline-none transition resize-none font-mono shadow-inner" placeholder="Paste daftar nama file dari WhatsApp klien di sini..."></textarea>
             </div>
         </div>
 
@@ -163,7 +163,6 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Fungsi KHUSUS untuk mengambil base name dari file yang ada di Hardisk
         function getBaseName(filename) {
             let name = filename.trim().toUpperCase();
             const dotIndex = name.lastIndexOf('.');
@@ -173,51 +172,54 @@
             return name.trim();
         }
 
-        // FUNGSI BARU: Parser Cerdas untuk mengekstrak hanya nama file dari format list Portal
+        // FUNGSI BARU: Parser Cerdas yang Telah Diperbarui
         function parseClientList(rawText) {
             let list = [];
             const lines = rawText.split('\n');
             
             for (let line of lines) {
                 line = line.trim();
+                const upperLine = line.toUpperCase();
                 
-                // 1. Abaikan baris kosong dan baris struk informasi (Metadata)
+                // 1. Abaikan baris metadata dengan pencocokan yang lebih luas
                 if (!line || 
                     line.startsWith('=') || 
-                    line.toUpperCase().includes('LAYANAN :') || 
-                    line.toUpperCase().includes('KLIEN :') || 
-                    line.toUpperCase().includes('TOTAL :') || 
-                    line.toUpperCase().includes('CATATAN:') || 
-                    line.toUpperCase().includes('DICETAK OTOMATIS')) {
+                    line.startsWith('*') || 
+                    upperLine.includes('LAYANAN') || 
+                    upperLine.includes('KLIEN') || 
+                    upperLine.includes('TOTAL') || 
+                    upperLine.includes('CATATAN:') || 
+                    upperLine.includes('DICETAK OTOMATIS')) {
                     continue;
                 }
                 
-                // 2. Hapus angka urutan list (contoh: "1. WIJ07477" -> "WIJ07477")
+                // 2. Hapus angka urutan list (contoh: "1. FOY_1171.JPG" -> "FOY_1171.JPG")
                 let cleanName = line.replace(/^\d+\.\s*/, '').trim();
+
+                // 3. Hapus keterangan folder di belakang jika ada (contoh: "_[Folder: 1. RAW File (JPG)]_")
+                // Regex ini akan menghapus apapun mulai dari "[Folder:" beserta karakter penutupnya
+                cleanName = cleanName.replace(/\s*_?\[Folder:.*\]_?/i, '').trim();
                 
-                // 3. Hapus ekstensi file jika kebetulan ada dari client
+                // 4. Hapus ekstensi file dengan aman karena teks folder sudah dibuang
                 const dotIndex = cleanName.lastIndexOf('.');
                 if (dotIndex !== -1) {
                     cleanName = cleanName.substring(0, dotIndex);
                 }
                 
-                // 4. Ubah ke huruf kapital untuk pencocokan yang akurat
+                // 5. Ubah ke huruf kapital untuk pencocokan yang akurat
                 cleanName = cleanName.trim().toUpperCase();
                 
-                // Jika masih ada nama tersisa, masukkan ke target pencarian
                 if (cleanName) {
                     list.push(cleanName);
                 }
             }
             
-            // Mengembalikan list tanpa duplikat (untuk keamanan)
             return [...new Set(list)]; 
         }
 
         async function searchFilesInDirectory(dirHandle, notFoundList, copiedCountRef, totalTarget) {
             for await (const entry of dirHandle.values()) {
                 if (entry.kind === 'file') {
-                    // Gunakan base name untuk mencocokkan nama file di komputer dengan list target
                     const fileBaseName = getBaseName(entry.name);
                     const listIndex = notFoundList.findIndex(t => t === fileBaseName);
                     
@@ -232,15 +234,12 @@
                         copiedCountRef.count++;
                         document.getElementById('progressText').innerText = `${copiedCountRef.count} / ${totalTarget} File Tercopy`;
                         
-                        // Hapus dari list yang belum ditemukan
                         notFoundList.splice(listIndex, 1);
                     }
                 } else if (entry.kind === 'directory') {
-                    // Masuk ke sub-folder secara rekursif
                     await searchFilesInDirectory(entry, notFoundList, copiedCountRef, totalTarget);
                 }
                 
-                // Jika semua file sudah ditemukan, hentikan pencarian (Hemat resource)
                 if (notFoundList.length === 0) return;
             }
         }
@@ -252,8 +251,6 @@
             }
 
             const rawListText = document.getElementById('fileList').value;
-            
-            // Panggil parser baru yang cerdas
             const targetList = parseClientList(rawListText);
 
             if (targetList.length === 0) {
@@ -277,7 +274,6 @@
             let notFoundList = [...targetList]; 
 
             try {
-                // Eksekusi pencarian rekursif
                 await searchFilesInDirectory(sourceHandle, notFoundList, copiedCountRef, targetList.length);
 
                 addLog(`----------------------------------------`);
